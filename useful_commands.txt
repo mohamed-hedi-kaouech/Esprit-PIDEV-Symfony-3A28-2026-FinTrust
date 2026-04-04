@@ -3,3 +3,7 @@ information_schema.columns WHERE table_schema = DATABASE() ORDER BY table_name, 
 
 php bin/console doctrine:query:sql "SELECT table_name, column_name, referenced_table_name, referenced_column_name FROM information_schema.key_column_usage 
 WHERE table_schema = DATABASE() AND referenced_table_name IS NOT NULL" ///tables + relations foriegn keys
+
+
+
+php -S localhost:8000 -t public ///lancer projet
