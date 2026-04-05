@@ -18,5 +18,7 @@ return [
     '_profiler_exception' => [['token'], ['_controller' => 'web_profiler.controller.exception_panel::body'], [], [['text', '/exception'], ['variable', '/', '[^/]++', 'token', true], ['text', '/_profiler']], [], [], []],
     '_profiler_exception_css' => [['token'], ['_controller' => 'web_profiler.controller.exception_panel::stylesheet'], [], [['text', '/exception.css'], ['variable', '/', '[^/]++', 'token', true], ['text', '/_profiler']], [], [], []],
     'app' => [[], ['_controller' => 'App\\Controller\\LandingPage::index'], [], [['text', '/']], [], [], []],
+    'product_list' => [[], ['_controller' => 'App\\Controller\\Product\\ProductListController::product_list'], [], [['text', '/Product/List']], [], [], []],
     'App\Controller\LandingPage::index' => [[], ['_controller' => 'App\\Controller\\LandingPage::index'], [], [['text', '/']], [], [], []],
+    'App\Controller\Product\ProductListController::product_list' => [[], ['_controller' => 'App\\Controller\\Product\\ProductListController::product_list'], [], [['text', '/Product/List']], [], [], []],
 ];

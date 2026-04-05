@@ -15,6 +15,7 @@ return [
         '/_profiler/xdebug' => [[['_route' => '_profiler_xdebug', '_controller' => 'web_profiler.controller.profiler::xdebugAction'], null, null, null, false, false, null]],
         '/_profiler/open' => [[['_route' => '_profiler_open_file', '_controller' => 'web_profiler.controller.profiler::openAction'], null, null, null, false, false, null]],
         '/' => [[['_route' => 'app', '_controller' => 'App\\Controller\\LandingPage::index'], null, null, null, false, false, null]],
+        '/Product/List' => [[['_route' => 'product_list', '_controller' => 'App\\Controller\\Product\\ProductListController::product_list'], null, null, null, false, false, null]],
     ],
     [ // $regexpList
         0 => '{^(?'

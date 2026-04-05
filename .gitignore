@@ -11,7 +11,7 @@
 /phpunit.xml
 .phpunit.result.cache
 ###< phpunit/phpunit ###
-
+/var
 ###> symfony/phpunit-bridge ###
 .phpunit.result.cache
 /phpunit.xml
