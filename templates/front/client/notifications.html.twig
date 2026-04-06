@@ -1,0 +1,44 @@
+{# Notifications — FrontOffice | Hérite de front/front.html.twig #}
+{% extends 'front/front.html.twig' %}
+{% block title %}Notifications{% endblock %}
+
+{% block body %}
+<div class="container-xl py-5" style="max-width:760px">
+
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <h1 class="ft-page-title mb-0">
+      <i class="bi bi-bell me-2 text-primary"></i>Mes notifications
+    </h1>
+    <span class="badge ft-badge-blue">{{ notifications|length }}</span>
+  </div>
+
+  {% if notifications is empty %}
+    <div class="ft-empty-state text-center py-5">
+      <i class="bi bi-bell-slash fs-1 text-muted d-block mb-3"></i>
+      <h3 class="h5 text-muted">Aucune notification</h3>
+      <p class="text-muted small">Vous n'avez pas encore reçu de notifications.</p>
+    </div>
+  {% else %}
+    <div class="ft-notif-list">
+      {% for notif in notifications %}
+        <div class="ft-notif-item {{ not notif.read ? 'ft-notif-unread' }} ft-notif-{{ notif.type|lower }}">
+          <div class="ft-notif-icon">
+            {% if notif.type == 'SUCCESS' %}<i class="bi bi-check-circle-fill text-success"></i>
+            {% elseif notif.type == 'ERROR' %}<i class="bi bi-x-circle-fill text-danger"></i>
+            {% elseif notif.type == 'WARNING' %}<i class="bi bi-exclamation-triangle-fill text-warning"></i>
+            {% else %}<i class="bi bi-info-circle-fill text-primary"></i>{% endif %}
+          </div>
+          <div class="ft-notif-body flex-grow-1">
+            <p class="mb-1 fw-semibold small">{{ notif.message }}</p>
+            <small class="text-muted">{{ notif.createdAt|date('d/m/Y à H:i') }}</small>
+          </div>
+          {% if not notif.read %}
+            <span class="ft-notif-dot" title="Non lue"></span>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

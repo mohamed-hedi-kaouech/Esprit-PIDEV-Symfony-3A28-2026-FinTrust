@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity;
+namespace App\Entity\Categorie;
 
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -24,10 +24,10 @@ class Categorie
     #[ORM\Column(name: 'seuilAlerte', type: 'float')]
     private float $seuilAlerte;
 
-    #[ORM\OneToMany(targetEntity: Alerte::class, mappedBy: 'categorie')]
+    #[ORM\OneToMany(targetEntity: \App\Entity\Categorie\Alerte::class, mappedBy: 'categorie')]
     private Collection $alertes;
 
-    #[ORM\OneToMany(targetEntity: Item::class, mappedBy: 'categorieRel')]
+    #[ORM\OneToMany(targetEntity: \App\Entity\Categorie\Item::class, mappedBy: 'categorieRel')]
     private Collection $items;
 
     public function __construct()
