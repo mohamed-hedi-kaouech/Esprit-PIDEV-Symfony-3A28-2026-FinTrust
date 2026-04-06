@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity;
+namespace App\Entity\Categorie;
 
 use Doctrine\ORM\Mapping as ORM;
 
@@ -27,7 +27,7 @@ class Item
     private int $idCategorie;
 
     // FIX: added inversedBy: 'items' to match Categorie#items OneToMany
-    #[ORM\ManyToOne(targetEntity: Categorie::class, inversedBy: 'items')]
+    #[ORM\ManyToOne(targetEntity: \App\Entity\Categorie\Categorie::class, inversedBy: 'items')]
     #[ORM\JoinColumn(name: 'idCategorie', referencedColumnName: 'idCategorie')]
     private Categorie $categorieRel;
 

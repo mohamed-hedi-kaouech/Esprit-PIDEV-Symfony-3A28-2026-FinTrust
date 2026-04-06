@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity;
+namespace App\Entity\Categorie;
 
 use Doctrine\ORM\Mapping as ORM;
 
@@ -29,7 +29,7 @@ class Alerte
     private \DateTimeInterface $createdAt;
 
     // FIX: added inversedBy: 'alertes' to match Categorie#alertes OneToMany
-    #[ORM\ManyToOne(targetEntity: Categorie::class, inversedBy: 'alertes')]
+    #[ORM\ManyToOne(targetEntity: \App\Entity\Categorie\Categorie::class, inversedBy: 'alertes')]
     #[ORM\JoinColumn(name: 'idCategorie', referencedColumnName: 'idCategorie', onDelete: 'CASCADE')]
     private Categorie $categorie;
 
