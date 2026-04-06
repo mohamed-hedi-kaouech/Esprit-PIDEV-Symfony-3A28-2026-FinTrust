@@ -15,7 +15,9 @@ return [
         '/_profiler/xdebug' => [[['_route' => '_profiler_xdebug', '_controller' => 'web_profiler.controller.profiler::xdebugAction'], null, null, null, false, false, null]],
         '/_profiler/open' => [[['_route' => '_profiler_open_file', '_controller' => 'web_profiler.controller.profiler::openAction'], null, null, null, false, false, null]],
         '/' => [[['_route' => 'app', '_controller' => 'App\\Controller\\LandingPage::index'], null, null, null, false, false, null]],
-        '/Product/List' => [[['_route' => 'product_list', '_controller' => 'App\\Controller\\Product\\ProductListController::product_list'], null, null, null, false, false, null]],
+        '/Product/List' => [[['_route' => 'product_list', '_controller' => 'App\\Controller\\Product\\ProductController::product_list'], null, null, null, false, false, null]],
+        '/EditProduct' => [[['_route' => 'EditProduct', '_controller' => 'App\\Controller\\Product\\ProductController::EditProduct'], null, ['GET' => 0, 'POST' => 1], null, false, false, null]],
+        '/CreateProduct' => [[['_route' => 'CreateProduct', '_controller' => 'App\\Controller\\Product\\ProductController::CreateProduct'], null, ['GET' => 0, 'POST' => 1], null, false, false, null]],
     ],
     [ // $regexpList
         0 => '{^(?'
@@ -37,6 +39,7 @@ return [
                         .')'
                     .')'
                 .')'
+                .'|/deleteProduct/([^/]++)(*:225)'
             .')/?$}sDu',
     ],
     [ // $dynamicRoutes
@@ -47,8 +50,9 @@ return [
         148 => [[['_route' => '_profiler_router', '_controller' => 'web_profiler.controller.router::panelAction'], ['token'], null, null, false, false, null]],
         168 => [[['_route' => '_profiler_exception', '_controller' => 'web_profiler.controller.exception_panel::body'], ['token'], null, null, false, false, null]],
         181 => [[['_route' => '_profiler_exception_css', '_controller' => 'web_profiler.controller.exception_panel::stylesheet'], ['token'], null, null, false, false, null]],
-        191 => [
-            [['_route' => '_profiler', '_controller' => 'web_profiler.controller.profiler::panelAction'], ['token'], null, null, false, true, null],
+        191 => [[['_route' => '_profiler', '_controller' => 'web_profiler.controller.profiler::panelAction'], ['token'], null, null, false, true, null]],
+        225 => [
+            [['_route' => 'product_delete', '_controller' => 'App\\Controller\\Product\\ProductController::delete'], ['id'], ['POST' => 0], null, false, true, null],
             [null, null, null, null, false, false, 0],
         ],
     ],

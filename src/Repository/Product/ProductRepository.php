@@ -55,4 +55,39 @@ class ProductRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+
+    public function findFiltered($search, $category, $sort)
+{
+    $qb = $this->createQueryBuilder('p');
+
+    if ($search) {
+        $qb->andWhere('LOWER(p.description) LIKE :search OR LOWER(p.category) LIKE :search')
+           ->setParameter('search', '%' . strtolower($search) . '%');
+    }
+
+    if ($category) {
+        $qb->andWhere('p.category = :category')
+           ->setParameter('category', $category);
+    }
+
+    switch ($sort) {
+        case 'price_asc':
+            $qb->orderBy('p.price', 'ASC');
+            break;
+        case 'price_desc':
+            $qb->orderBy('p.price', 'DESC');
+            break;
+        case 'date_asc':
+            $qb->orderBy('p.createdAt', 'ASC');
+            break;
+        case 'date_desc':
+            $qb->orderBy('p.createdAt', 'DESC');
+            break;
+        default:
+            $qb->orderBy('p.productId', 'ASC');
+    }
+
+    return $qb->getQuery()->getResult();
+}
 }

@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Liste des Produits</title>
-<link rel="stylesheet" href="{{ asset('css/Product/StyleProduct.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/Product/StyleProduct.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
 
@@ -15,7 +16,7 @@
     <a href="#" class="btn-back">&#8592; Retour</a>
     <span class="page-title">Liste des Produits</span>
     <div class="spacer"></div>
-    <a href="#" class="btn-add">&#43; Nouveau Produit</a>
+    <a href="{{ path('CreateProduct') }}" class="btn-add">&#43; Nouveau Produit</a>
   </div>
 
   <div class="list-container">
@@ -105,10 +106,22 @@
               <td class="product-desc" title="{{ product.description }}">{{ product.description }}</td>
               <td class="product-date">{{ product.createdAt|date('d/m/Y') }}</td>
               <td style="text-align:right;">
-                <a href="#" class="action-btn">Modifier</a>
-                <a href="#"
-                   class="action-btn action-del"
-                   onclick="return confirm('Supprimer ce produit ?')">Supprimer</a>
+                <a href="{{ path('EditProduct', {id: product.productId}) }}" class="action-btn">Modifier</a><br>
+                <form method="post" action="{{ path('product_delete', {id: product.productId}) }}" class="delete-form">
+                    <button class="action-btn action-del" type="button">
+                        Supprimer
+                    </button>
+                </form>
+                {% for message in app.flashes('success') %}
+                    <script>
+                    Swal.fire({
+                        icon: 'success',
+                        title: '{{ message }}',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                    </script>
+                {% endfor %}
               </td>
             </tr>
           {% endfor %}
@@ -123,6 +136,6 @@
 
   </div>
 </div>
-
+  <script src="{{ asset('js/Product/ScriptProduct.js') }}" defer></script>
 </body>
 </html>
