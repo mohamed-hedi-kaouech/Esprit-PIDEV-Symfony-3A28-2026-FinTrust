@@ -7,17 +7,17 @@ use App\Entity\User\User;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
- * Service — Notifications internes.
+ * Service - Notifications internes.
  *
- * Crée des notifications stockées en base de données.
- * Extensible pour intégrer Symfony Mailer (email) ou Notifier (SMS/push).
+ * Cree des notifications stockees en base de donnees.
+ * Extensible pour integrer Symfony Mailer (email) ou Notifier (SMS/push).
  */
 class NotificationService
 {
     public function __construct(private readonly EntityManagerInterface $em) {}
 
     /**
-     * Crée une notification interne pour un utilisateur.
+     * Cree une notification interne pour un utilisateur.
      *
      * @param string $type INFO | SUCCESS | WARNING | ERROR
      */
@@ -34,32 +34,29 @@ class NotificationService
         $this->em->flush();
     }
 
-    /** Notification de KYC approuvé. */
     public function notifyKycApproved(User $user): void
     {
         $this->notify(
             $user,
-            'Votre dossier KYC a été approuvé. Votre compte FinTrust est maintenant pleinement actif.',
+            'Votre dossier KYC a ete approuve. Votre compte FinTrust est maintenant pleinement actif.',
             'SUCCESS'
         );
     }
 
-    /** Notification de KYC refusé avec motif. */
     public function notifyKycRefused(User $user, string $reason): void
     {
         $this->notify(
             $user,
-            "Votre dossier KYC a été refusé. Motif : {$reason}",
+            "Votre dossier KYC a ete refuse. Motif : {$reason}",
             'ERROR'
         );
     }
 
-    /** Notification de KYC soumis (confirmation de réception). */
     public function notifyKycSubmitted(User $user): void
     {
         $this->notify(
             $user,
-            'Votre dossier KYC a bien été reçu. Il sera examiné dans les plus brefs délais.',
+            'Votre dossier KYC a bien ete recu. Il sera examine dans les plus brefs delais.',
             'INFO'
         );
     }
@@ -68,8 +65,47 @@ class NotificationService
     {
         $this->notify(
             $user,
-            "Votre profil de risque a été réévalué au niveau {$riskLevel}. Certaines actions sensibles peuvent être temporairement limitées.",
+            "Votre profil de risque a ete revalue au niveau {$riskLevel}. Certaines actions sensibles peuvent etre temporairement limitees.",
             $riskLevel === User::RISK_CRITICAL ? 'ERROR' : 'WARNING'
         );
+    }
+
+    public function markAsReadForUser(int $notificationId, User $user): bool
+    {
+        /** @var Notification|null $notification */
+        $notification = $this->em->getRepository(Notification::class)->find($notificationId);
+
+        if (!$notification || $notification->getUser()->getId() !== $user->getId()) {
+            return false;
+        }
+
+        if ($notification->isRead()) {
+            return true;
+        }
+
+        $notification->setIsRead(true);
+        $this->em->flush();
+
+        return true;
+    }
+
+    public function markAllAsReadForUser(User $user): int
+    {
+        /** @var Notification[] $notifications */
+        $notifications = $this->em->getRepository(Notification::class)
+            ->findBy(['user' => $user, 'isRead' => false]);
+
+        $updated = 0;
+
+        foreach ($notifications as $notification) {
+            $notification->setIsRead(true);
+            $updated++;
+        }
+
+        if ($updated > 0) {
+            $this->em->flush();
+        }
+
+        return $updated;
     }
 }

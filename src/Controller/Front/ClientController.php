@@ -302,10 +302,58 @@ class ClientController extends AbstractController
         /** @var User $user */
         $user = $this->getUser();
         $notifs = $this->userService->getNotifications($user);
+        $unreadCount = count(array_filter($notifs, static fn ($notif) => !$notif->isRead()));
 
         return $this->render('front/client/notifications.html.twig', [
             'notifications' => $notifs,
+            'unreadCount' => $unreadCount,
         ]);
+    }
+
+    #[Route('/notifications/{id}/read', name: 'notifications_read', methods: ['POST'])]
+    public function markNotificationAsRead(int $id, Request $request): RedirectResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        if (!$this->isCsrfTokenValid('read_notification_' . $id, (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'La demande est invalide.');
+
+            return $this->redirectToRoute('front_notifications');
+        }
+
+        if (!$this->notificationService->markAsReadForUser($id, $user)) {
+            $this->addFlash('error', 'Notification introuvable.');
+
+            return $this->redirectToRoute('front_notifications');
+        }
+
+        $this->addFlash('success', 'Notification marquee comme lue.');
+
+        return $this->redirectToRoute('front_notifications');
+    }
+
+    #[Route('/notifications/read-all', name: 'notifications_read_all', methods: ['POST'])]
+    public function markAllNotificationsAsRead(Request $request): RedirectResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        if (!$this->isCsrfTokenValid('read_all_notifications', (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'La demande est invalide.');
+
+            return $this->redirectToRoute('front_notifications');
+        }
+
+        $updated = $this->notificationService->markAllAsReadForUser($user);
+
+        if ($updated > 0) {
+            $this->addFlash('success', $updated > 1 ? 'Toutes les notifications ont ete marquees comme lues.' : 'La notification a ete marquee comme lue.');
+        } else {
+            $this->addFlash('info', 'Aucune notification non lue a mettre a jour.');
+        }
+
+        return $this->redirectToRoute('front_notifications');
     }
 
     #[Route('/qr/{token}', name: 'qr_view', methods: ['GET'])]
