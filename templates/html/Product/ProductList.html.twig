@@ -1,1 +1,128 @@
-{{ products[0].description }}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Liste des Produits</title>
+<link rel="stylesheet" href="{{ asset('css/Product/StyleProduct.css') }}">
+</head>
+<body>
+
+<div class="page">
+
+  {# ── Header ── #}
+  <div class="header">
+    <a href="#" class="btn-back">&#8592; Retour</a>
+    <span class="page-title">Liste des Produits</span>
+    <div class="spacer"></div>
+    <a href="#" class="btn-add">&#43; Nouveau Produit</a>
+  </div>
+
+  <div class="list-container">
+
+    {# ── Search & Filter form (GET → controller handles logic) ── #}
+    <form method="GET" action="{{ path('product_list') }}">
+
+      <div class="search-row">
+        <input
+          class="search-input"
+          type="text"
+          name="search"
+          placeholder="🔍 Rechercher un produit..."
+          value="{{ app.request.query.get('search') }}"
+        />
+        <button type="submit" class="btn-search">Rechercher</button>
+        <a href="{{ path('product_list') }}" class="btn-reset">Réinitialiser</a>
+      </div>
+
+      <div class="filter-row">
+        <span class="filter-label">Filtrer par catégorie :</span>
+        <select name="category" class="filter-select" onchange="this.form.submit()">
+          <option value="">Toutes les catégories</option>
+          {% set categories = products|map(p => p.category)|sort %}
+          {% for cat in categories %}
+            <option value="{{ cat }}" {% if app.request.query.get('category') == cat %}selected{% endif %}>
+              {{ cat|replace({'_': ' '})|title }}
+            </option>
+          {% endfor %}
+        </select>
+
+        <span class="filter-label" style="margin-left:8px;">Trier par :</span>
+        <select name="sort" class="filter-select" onchange="this.form.submit()">
+          <option value="">Par défaut</option>
+          <option value="price_asc"  {% if app.request.query.get('sort') == 'price_asc'  %}selected{% endif %}>Prix croissant</option>
+          <option value="price_desc" {% if app.request.query.get('sort') == 'price_desc' %}selected{% endif %}>Prix décroissant</option>
+          <option value="date_desc"  {% if app.request.query.get('sort') == 'date_desc'  %}selected{% endif %}>Plus récent</option>
+          <option value="date_asc"   {% if app.request.query.get('sort') == 'date_asc'   %}selected{% endif %}>Plus ancien</option>
+        </select>
+      </div>
+    </form>
+
+    {# ── Active search indicator ── #}
+    {% set searchTerm = app.request.query.get('search') %}
+    {% set filterCat  = app.request.query.get('category') %}
+    {% if searchTerm or filterCat %}
+      <div class="active-search-bar">
+        Résultats filtrés
+        {% if searchTerm %} — recherche : <strong>"{{ searchTerm }}"</strong>{% endif %}
+        {% if filterCat  %} — catégorie : <strong>{{ filterCat|replace({'_': ' '})|title }}</strong>{% endif %}
+      </div>
+    {% endif %}
+
+    {# ── Table ── #}
+    <table class="product-table">
+      <thead>
+        <tr>
+          <th style="width:52px;"></th>
+          <th>Catégorie</th>
+          <th>Prix</th>
+          <th>Description</th>
+          <th>Date création</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if products is empty %}
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">Aucun produit trouvé.</div>
+            </td>
+          </tr>
+        {% else %}
+          {% for product in products %}
+            <tr>
+              <td>
+                <div class="product-icon">
+                  {{ product.category|slice(0,2)|upper }}
+                </div>
+              </td>
+              <td>
+                <span class="badge {{ cycle(['badge-blue','badge-green','badge-amber','badge-purple','badge-coral'], loop.index0) }}">
+                  {{ product.category|replace({'_': ' '})|title }}
+                </span>
+              </td>
+              <td class="product-price">{{ product.price|number_format(2, ',', ' ') }} DT</td>
+              <td class="product-desc" title="{{ product.description }}">{{ product.description }}</td>
+              <td class="product-date">{{ product.createdAt|date('d/m/Y') }}</td>
+              <td style="text-align:right;">
+                <a href="#" class="action-btn">Modifier</a>
+                <a href="#"
+                   class="action-btn action-del"
+                   onclick="return confirm('Supprimer ce produit ?')">Supprimer</a>
+              </td>
+            </tr>
+          {% endfor %}
+        {% endif %}
+      </tbody>
+    </table>
+
+    {# ── Footer count ── #}
+    <div class="footer-info">
+      Total : {{ products|length }} produit{{ products|length != 1 ? 's' : '' }}
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
