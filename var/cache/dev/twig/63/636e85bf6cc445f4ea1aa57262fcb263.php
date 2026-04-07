@@ -1943,6 +1943,6 @@ class __TwigTemplate_06ee096078f3967deab56fed82854966 extends Template
         </tbody>
     </table>
 {% endmacro %}
-", "@Doctrine/Collector/db.html.twig", "C:\\Users\\Lenovo\\Desktop\\Hedi\\Esprit-PIDEV-Symfony-3A28-2026-FinTrust\\vendor\\doctrine\\doctrine-bundle\\templates\\Collector\\db.html.twig");
+", "@Doctrine/Collector/db.html.twig", "C:\\Users\\DELL\\Desktop\\PIDEV(symfony)\\Esprit-PIDEV-Symfony-3A28-2026-FinTrust\\vendor\\doctrine\\doctrine-bundle\\templates\\Collector\\db.html.twig");
     }
 }

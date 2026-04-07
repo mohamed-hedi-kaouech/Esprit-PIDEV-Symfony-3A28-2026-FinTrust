@@ -1003,6 +1003,6 @@ class __TwigTemplate_aafeab61d4922e4151c3e91d5769a28d extends Template
         {% endautoescape %}</script>
     </div>
 {% endmacro %}
-", "@WebProfiler/Collector/time.html.twig", "C:\\Users\\Lenovo\\Desktop\\Hedi\\Esprit-PIDEV-Symfony-3A28-2026-FinTrust\\vendor\\symfony\\web-profiler-bundle\\Resources\\views\\Collector\\time.html.twig");
+", "@WebProfiler/Collector/time.html.twig", "C:\\Users\\DELL\\Desktop\\PIDEV(symfony)\\Esprit-PIDEV-Symfony-3A28-2026-FinTrust\\vendor\\symfony\\web-profiler-bundle\\Resources\\views\\Collector\\time.html.twig");
     }
 }

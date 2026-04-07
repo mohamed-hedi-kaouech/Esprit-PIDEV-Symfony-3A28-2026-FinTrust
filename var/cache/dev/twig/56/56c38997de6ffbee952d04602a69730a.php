@@ -1489,6 +1489,6 @@ class __TwigTemplate_fdda7f1b6f86d6643578564150328550 extends Template
         <span>{{ route|default(controller) }}</span>
     {%- endif %}
 {% endmacro %}
-", "@WebProfiler/Collector/request.html.twig", "C:\\Users\\Lenovo\\Desktop\\Hedi\\Esprit-PIDEV-Symfony-3A28-2026-FinTrust\\vendor\\symfony\\web-profiler-bundle\\Resources\\views\\Collector\\request.html.twig");
+", "@WebProfiler/Collector/request.html.twig", "C:\\Users\\DELL\\Desktop\\PIDEV(symfony)\\Esprit-PIDEV-Symfony-3A28-2026-FinTrust\\vendor\\symfony\\web-profiler-bundle\\Resources\\views\\Collector\\request.html.twig");
     }
 }

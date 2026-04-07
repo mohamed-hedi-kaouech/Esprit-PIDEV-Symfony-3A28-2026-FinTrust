@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Items{% endblock %}
+
+{% block body %}
+    <h1>Items</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Libelle</th>
+                <th>Montant</th>
+                <th>Catégorie</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+            <tr>
+                <td>{{ item.idItem }}</td>
+                <td>{{ item.libelle }}</td>
+                <td>{{ item.montant }}</td>
+                <td>{{ item.categorieRel ? item.categorieRel.nomCategorie : '' }}</td>
+                <td>
+                    <a href="{{ path('app_item_show', {'id': item.idItem}) }}">Voir</a>
+                    <a href="{{ path('app_item_edit', {'id': item.idItem}) }}">Modifier</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_item_new') }}">Créer un nouvel item</a>
+{% endblock %}

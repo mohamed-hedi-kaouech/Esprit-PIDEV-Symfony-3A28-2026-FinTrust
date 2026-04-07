@@ -1453,6 +1453,6 @@ class __TwigTemplate_774a3471e5658db8ce0855bb1e78e569 extends Template
         Sfjs.loadToolbar('{{ token }}');
     /*]]>*/</script>
 </div>
-", "@WebProfiler/Profiler/toolbar_js.html.twig", "C:\\Users\\Lenovo\\Desktop\\Hedi\\Esprit-PIDEV-Symfony-3A28-2026-FinTrust\\vendor\\symfony\\web-profiler-bundle\\Resources\\views\\Profiler\\toolbar_js.html.twig");
+", "@WebProfiler/Profiler/toolbar_js.html.twig", "C:\\Users\\DELL\\Desktop\\PIDEV(symfony)\\Esprit-PIDEV-Symfony-3A28-2026-FinTrust\\vendor\\symfony\\web-profiler-bundle\\Resources\\views\\Profiler\\toolbar_js.html.twig");
     }
 }

@@ -1,0 +1,37 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block admin_body %}
+    <h1>Catégories</h1>
+
+    <a href="{{ path('admin_categorie_new') }}">Créer une nouvelle catégorie</a>
+
+    <table class="table" style="width:100%; margin-top:1rem; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="border-bottom:1px solid #ccc; padding:0.5rem; text-align:left;">Id</th>
+                <th style="border-bottom:1px solid #ccc; padding:0.5rem; text-align:left;">Nom</th>
+                <th style="border-bottom:1px solid #ccc; padding:0.5rem; text-align:left;">Budget</th>
+                <th style="border-bottom:1px solid #ccc; padding:0.5rem; text-align:left;">Seuil</th>
+                <th style="border-bottom:1px solid #ccc; padding:0.5rem; text-align:left;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for categorie in categories %}
+            <tr>
+                <td style="padding:0.5rem; border-bottom:1px solid #eee;">{{ categorie.idCategorie }}</td>
+                <td style="padding:0.5rem; border-bottom:1px solid #eee;">{{ categorie.nomCategorie }}</td>
+                <td style="padding:0.5rem; border-bottom:1px solid #eee;">{{ categorie.budgetPrevu }}</td>
+                <td style="padding:0.5rem; border-bottom:1px solid #eee;">{{ categorie.seuilAlerte }}</td>
+                <td style="padding:0.5rem; border-bottom:1px solid #eee;">
+                    <a href="{{ path('admin_categorie_show', {'id': categorie.idCategorie}) }}">Voir</a>
+                    <a href="{{ path('admin_categorie_edit', {'id': categorie.idCategorie}) }}">Modifier</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="5" style="padding:0.5rem;">Aucune catégorie trouvée.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

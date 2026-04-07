@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Entity;
+namespace App\Entity\Categorie;
 
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'categorie')]
@@ -16,12 +17,18 @@ class Categorie
     private int $idCategorie;
 
     #[ORM\Column(name: 'nomCategorie', type: 'string', length: 255)]
+    #[Assert\NotBlank(message: 'Le nom de la catégorie est obligatoire.')]
+    #[Assert\Length(min: 2, max: 255, minMessage: 'Le nom doit contenir au moins {{ limit }} caractères.', maxMessage: 'Le nom ne doit pas dépasser {{ limit }} caractères.')]
     private string $nomCategorie;
 
     #[ORM\Column(name: 'budgetPrevu', type: 'float')]
+    #[Assert\NotNull(message: 'Le budget prévu est obligatoire.')]
+    #[Assert\PositiveOrZero(message: 'Le budget doit être positif ou zéro.')]
     private float $budgetPrevu;
 
     #[ORM\Column(name: 'seuilAlerte', type: 'float')]
+    #[Assert\NotNull(message: 'Le seuil d’alerte est obligatoire.')]
+    #[Assert\PositiveOrZero(message: 'Le seuil d’alerte doit être positif ou zéro.')]
     private float $seuilAlerte;
 
     #[ORM\OneToMany(targetEntity: Alerte::class, mappedBy: 'categorie')]

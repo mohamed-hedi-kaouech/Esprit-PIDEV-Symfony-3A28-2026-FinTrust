@@ -1,0 +1,18 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block admin_body %}
+    <h1>Tableau de bord Backoffice</h1>
+
+    <div style="display:grid; grid-template-columns: repeat(2, minmax(200px, 1fr)); gap:1rem; margin-top:1rem;">
+        <div style="padding:1rem; border:1px solid #ddd; border-radius:8px;">
+            <h2>Catégories</h2>
+            <p>{{ categoriesCount }}</p>
+            <a href="{{ path('admin_categorie_index') }}">Voir la gestion</a>
+        </div>
+        <div style="padding:1rem; border:1px solid #ddd; border-radius:8px;">
+            <h2>Items</h2>
+            <p>{{ itemsCount }}</p>
+            <a href="{{ path('admin_item_index') }}">Voir la gestion</a>
+        </div>
+    </div>
+{% endblock %}
