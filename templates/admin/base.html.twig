@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Backoffice{% endblock %}
+
+{% block body %}
+    <header style="padding: 1rem; background: #222; color: #fff;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem;">
+            <div>
+                <a href="{{ path('admin_dashboard') }}" style="color:#fff; text-decoration:none; font-weight:bold;">Backoffice</a>
+            </div>
+            <nav style="display:flex; gap:1rem;">
+                <a href="{{ path('admin_categorie_index') }}" style="color:#fff; text-decoration:none;">Catégories</a>
+                <a href="{{ path('admin_item_index') }}" style="color:#fff; text-decoration:none;">Items</a>
+                <a href="{{ path('app_categorie_index') }}" style="color:#fff; text-decoration:none;">Front</a>
+            </nav>
+        </div>
+    </header>
+
+    <main style="padding: 1.5rem;">
+        {% block admin_body %}{% endblock %}
+    </main>
+{% endblock %}

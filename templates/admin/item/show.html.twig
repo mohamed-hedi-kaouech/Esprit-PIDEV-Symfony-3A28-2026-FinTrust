@@ -1,0 +1,30 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block admin_body %}
+    <h1>Détails de l'item</h1>
+
+    <table style="width:100%; border-collapse: collapse; margin-bottom:1rem;">
+        <tbody>
+            <tr>
+                <th style="text-align:left; padding:0.5rem; border-bottom:1px solid #ddd;">Id</th>
+                <td style="padding:0.5rem; border-bottom:1px solid #ddd;">{{ item.idItem }}</td>
+            </tr>
+            <tr>
+                <th style="text-align:left; padding:0.5rem; border-bottom:1px solid #ddd;">Libellé</th>
+                <td style="padding:0.5rem; border-bottom:1px solid #ddd;">{{ item.libelle }}</td>
+            </tr>
+            <tr>
+                <th style="text-align:left; padding:0.5rem; border-bottom:1px solid #ddd;">Montant</th>
+                <td style="padding:0.5rem; border-bottom:1px solid #ddd;">{{ item.montant }}</td>
+            </tr>
+            <tr>
+                <th style="text-align:left; padding:0.5rem;">Catégorie</th>
+                <td style="padding:0.5rem;">{{ item.categorieRel ? item.categorieRel.nomCategorie : '—' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('admin_item_index') }}">Retour à la liste</a>
+    <a href="{{ path('admin_item_edit', {'id': item.idItem}) }}">Modifier</a>
+    {{ include('admin/item/_delete_form.html.twig') }}
+{% endblock %}
