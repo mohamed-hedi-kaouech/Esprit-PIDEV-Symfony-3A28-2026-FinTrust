@@ -22,7 +22,7 @@ final class ProductController extends AbstractController
 
         $products = $repo->findFiltered($search, $category, $sort);
 
-        return $this->render('html/Product/ProductList.html.twig', [
+        return $this->render('html/Product/Admin/ProductList.html.twig', [
             'products' => $products,
         ]);
     }
@@ -108,7 +108,7 @@ final class ProductController extends AbstractController
             return $this->redirectToRoute('product_list');
         }
 
-        return $this->render('html/Product/ProductEdit.html.twig', [
+        return $this->render('html/Product/Admin/ProductEdit.html.twig', [
             'product' => $product,
         ]);
     }
@@ -180,7 +180,7 @@ final class ProductController extends AbstractController
         }
 
         // GET request: render empty form
-        return $this->render('html/Product/ProductCreate.html.twig', [
+        return $this->render('html/Product/Admin/ProductCreate.html.twig', [
             'csrf_token' => $csrfTokenManager->getToken('CreateProduct')->getValue()
         ]);
     }

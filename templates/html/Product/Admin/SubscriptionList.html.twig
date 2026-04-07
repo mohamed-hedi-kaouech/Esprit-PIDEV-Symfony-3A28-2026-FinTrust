@@ -8,7 +8,42 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/Product/StyleListSubscription.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        .action-group-vertical {
+            display: flex;
+            flex-direction: column; /* stack vertically */
+            gap: 6px; /* space between buttons */
+            align-items: flex-start; /* align left, optional */
+        }
+
+        .action-group-vertical form {
+            margin: 0;
+        }
+
+        .btn-edit,
+        .btn-delete {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s ease;
+            width: 100%; /* optional: make buttons same width */
+        }
+
+        /* Edit button */
+        .btn-edit {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background-color: #2980b9;
+        }
+    </style>
 </head>
 <body>
 
@@ -138,11 +173,11 @@
                                 </span>
                             </td>
                             <td class="td-action">
-                                <form method="post" action="{{ path('subscriptiondelete', {id: subscription.subscriptionId}) }}">
-                                    <button type="button">
-                                        Supprimer
-                                    </button>
-                                </form>
+                                <div class="action-group">
+                                    <a href="{{ path('subscription_update', {id: subscription.subscriptionId}) }}" class="btn-edit">
+                                        Modifier
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     {% else %}
@@ -178,6 +213,16 @@
         </div>
 
     </main>
-
+    {# Flash messages #}
+    {% for msg in app.flashes('success') %}
+        <script>
+            Swal.fire({
+                icon: 'success',
+                title: '{{ msg }}',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        </script>
+    {% endfor %}
 </body>
 </html>
