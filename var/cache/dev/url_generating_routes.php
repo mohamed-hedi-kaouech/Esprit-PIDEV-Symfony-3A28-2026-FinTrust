@@ -22,9 +22,13 @@ return [
     'product_delete' => [['id'], ['_controller' => 'App\\Controller\\Product\\ProductController::delete'], [], [['variable', '/', '[^/]++', 'id', true], ['text', '/deleteProduct']], [], [], []],
     'EditProduct' => [[], ['_controller' => 'App\\Controller\\Product\\ProductController::EditProduct'], [], [['text', '/EditProduct']], [], [], []],
     'CreateProduct' => [[], ['_controller' => 'App\\Controller\\Product\\ProductController::CreateProduct'], [], [['text', '/CreateProduct']], [], [], []],
+    'subscription_list' => [[], ['_controller' => 'App\\Controller\\Product\\SubscriptionController::list'], [], [['text', '/subscriptionslist']], [], [], []],
+    'subscriptiondelete' => [['id'], ['_controller' => 'App\\Controller\\Product\\SubscriptionController::subscriptiondelete'], [], [['variable', '/', '[^/]++', 'id', true], ['text', '/subscriptiondelete']], [], [], []],
     'App\Controller\LandingPage::index' => [[], ['_controller' => 'App\\Controller\\LandingPage::index'], [], [['text', '/']], [], [], []],
     'App\Controller\Product\ProductController::product_list' => [[], ['_controller' => 'App\\Controller\\Product\\ProductController::product_list'], [], [['text', '/Product/List']], [], [], []],
     'App\Controller\Product\ProductController::delete' => [['id'], ['_controller' => 'App\\Controller\\Product\\ProductController::delete'], [], [['variable', '/', '[^/]++', 'id', true], ['text', '/deleteProduct']], [], [], []],
     'App\Controller\Product\ProductController::EditProduct' => [[], ['_controller' => 'App\\Controller\\Product\\ProductController::EditProduct'], [], [['text', '/EditProduct']], [], [], []],
     'App\Controller\Product\ProductController::CreateProduct' => [[], ['_controller' => 'App\\Controller\\Product\\ProductController::CreateProduct'], [], [['text', '/CreateProduct']], [], [], []],
+    'App\Controller\Product\SubscriptionController::list' => [[], ['_controller' => 'App\\Controller\\Product\\SubscriptionController::list'], [], [['text', '/subscriptionslist']], [], [], []],
+    'App\Controller\Product\SubscriptionController::subscriptiondelete' => [['id'], ['_controller' => 'App\\Controller\\Product\\SubscriptionController::subscriptiondelete'], [], [['variable', '/', '[^/]++', 'id', true], ['text', '/subscriptiondelete']], [], [], []],
 ];

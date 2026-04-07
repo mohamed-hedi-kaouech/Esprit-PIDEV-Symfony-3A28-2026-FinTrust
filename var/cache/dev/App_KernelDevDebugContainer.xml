@@ -372,10 +372,21 @@
         <argument type="service" id=".service_locator.O2p6Lk7.App\Controller\Product\ProductController"/>
       </call>
     </service>
+    <service id="App\Controller\Product\SubscriptionController" class="App\Controller\Product\SubscriptionController" public="true" autowire="true" autoconfigure="true">
+      <tag name="controller.service_arguments"/>
+      <tag name="container.service_subscriber"/>
+      <call method="setContainer">
+        <argument type="service" id=".service_locator.O2p6Lk7.App\Controller\Product\SubscriptionController"/>
+      </call>
+    </service>
     <service id="App\DataFixtures\AppFixtures" class="App\DataFixtures\AppFixtures" autowire="true" autoconfigure="true">
       <tag name="doctrine.fixture.orm"/>
     </service>
     <service id="App\Repository\Product\ProductRepository" class="App\Repository\Product\ProductRepository" autowire="true" autoconfigure="true">
+      <tag name="doctrine.repository_service"/>
+      <argument type="service" id="doctrine"/>
+    </service>
+    <service id="App\Repository\Product\ProductSubscriptionRepository" class="App\Repository\Product\ProductSubscriptionRepository" autowire="true" autoconfigure="true">
       <tag name="doctrine.repository_service"/>
       <argument type="service" id="doctrine"/>
     </service>
@@ -406,7 +417,7 @@
     </service>
     <service id="argument_resolver.service" class="Symfony\Component\HttpKernel\Controller\ArgumentResolver\ServiceValueResolver">
       <tag priority="-50" name="Symfony\Component\HttpKernel\Controller\ArgumentResolver\ServiceValueResolver">controller.argument_value_resolver</tag>
-      <argument type="service" id=".service_locator.tKUE.9."/>
+      <argument type="service" id=".service_locator.JtmS9P0"/>
     </service>
     <service id="argument_resolver.default" class="Symfony\Component\HttpKernel\Controller\ArgumentResolver\DefaultValueResolver">
       <tag priority="-100" name="Symfony\Component\HttpKernel\Controller\ArgumentResolver\DefaultValueResolver">controller.argument_value_resolver</tag>
@@ -3297,7 +3308,7 @@
     </service>
     <service id="argument_resolver.not_tagged_controller" class="Symfony\Component\HttpKernel\Controller\ArgumentResolver\NotTaggedControllerValueResolver">
       <tag name="controller.argument_value_resolver" priority="-200"/>
-      <argument type="service" id=".service_locator.tKUE.9."/>
+      <argument type="service" id=".service_locator.JtmS9P0"/>
     </service>
     <service id="debug.log_processor" class="Symfony\Bridge\Monolog\Processor\DebugProcessor">
       <tag name="kernel.reset" method="reset"/>
@@ -5045,7 +5056,7 @@
     <service id="doctrine.orm.configuration" class="Doctrine\ORM\Configuration" abstract="true"/>
     <service id="doctrine.orm.entity_manager.abstract" class="Doctrine\ORM\EntityManager" lazy="true" abstract="true"/>
     <service id="doctrine.orm.container_repository_factory" class="Doctrine\Bundle\DoctrineBundle\Repository\ContainerRepositoryFactory">
-      <argument type="service" id=".service_locator.hZm4rIX"/>
+      <argument type="service" id=".service_locator.rLY3JFN"/>
     </service>
     <service id="doctrine.orm.manager_configurator.abstract" class="Doctrine\Bundle\DoctrineBundle\ManagerConfigurator" abstract="true">
       <argument type="collection"/>
@@ -7099,10 +7110,15 @@
     <service id=".instanceof.Symfony\Contracts\Service\ServiceSubscriberInterface.0.App\Controller\Product\ProductController" class="App\Controller\Product\ProductController" autowire="true" abstract="true"/>
     <service id=".instanceof.Symfony\Bundle\FrameworkBundle\Controller\AbstractController.0.App\Controller\Product\ProductController" class="App\Controller\Product\ProductController" autowire="true" abstract="true"/>
     <service id=".abstract.instanceof.App\Controller\Product\ProductController" class="App\Controller\Product\ProductController" autowire="true" autoconfigure="true" abstract="true"/>
+    <service id=".instanceof.Symfony\Contracts\Service\ServiceSubscriberInterface.0.App\Controller\Product\SubscriptionController" class="App\Controller\Product\SubscriptionController" autowire="true" abstract="true"/>
+    <service id=".instanceof.Symfony\Bundle\FrameworkBundle\Controller\AbstractController.0.App\Controller\Product\SubscriptionController" class="App\Controller\Product\SubscriptionController" autowire="true" abstract="true"/>
+    <service id=".abstract.instanceof.App\Controller\Product\SubscriptionController" class="App\Controller\Product\SubscriptionController" autowire="true" autoconfigure="true" abstract="true"/>
     <service id=".instanceof.Doctrine\Bundle\FixturesBundle\ORMFixtureInterface.0.App\DataFixtures\AppFixtures" class="App\DataFixtures\AppFixtures" autowire="true" abstract="true"/>
     <service id=".abstract.instanceof.App\DataFixtures\AppFixtures" class="App\DataFixtures\AppFixtures" autowire="true" autoconfigure="true" abstract="true"/>
     <service id=".instanceof.Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryInterface.0.App\Repository\Product\ProductRepository" class="App\Repository\Product\ProductRepository" autowire="true" abstract="true"/>
     <service id=".abstract.instanceof.App\Repository\Product\ProductRepository" class="App\Repository\Product\ProductRepository" autowire="true" autoconfigure="true" abstract="true"/>
+    <service id=".instanceof.Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryInterface.0.App\Repository\Product\ProductSubscriptionRepository" class="App\Repository\Product\ProductSubscriptionRepository" autowire="true" abstract="true"/>
+    <service id=".abstract.instanceof.App\Repository\Product\ProductSubscriptionRepository" class="App\Repository\Product\ProductSubscriptionRepository" autowire="true" autoconfigure="true" abstract="true"/>
     <service id=".service_locator.w7.f4fT" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
       <argument type="collection">
@@ -7546,13 +7562,28 @@
         <argument key="em" type="service_closure" id="doctrine.orm.default_entity_manager"/>
       </argument>
     </service>
-    <service id=".service_locator.tKUE.9." class="Symfony\Component\DependencyInjection\ServiceLocator">
+    <service id=".service_locator.UyRPqbW" class="Symfony\Component\DependencyInjection\ServiceLocator">
+      <tag name="container.service_locator"/>
+      <argument type="collection">
+        <argument key="subscriptionRepo" type="service_closure" id="App\Repository\Product\ProductSubscriptionRepository"/>
+      </argument>
+    </service>
+    <service id=".service_locator.j78IDNb" class="Symfony\Component\DependencyInjection\ServiceLocator">
+      <tag name="container.service_locator"/>
+      <argument type="collection">
+        <argument key="em" type="service_closure" id="doctrine.orm.default_entity_manager"/>
+        <argument key="repository" type="service_closure" id="App\Repository\Product\ProductSubscriptionRepository"/>
+      </argument>
+    </service>
+    <service id=".service_locator.JtmS9P0" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
       <argument type="collection">
         <argument key="App\Controller\Product\ProductController::CreateProduct" type="service_closure" id=".service_locator.jXvCdB8"/>
         <argument key="App\Controller\Product\ProductController::EditProduct" type="service_closure" id=".service_locator.3lSDQI1"/>
         <argument key="App\Controller\Product\ProductController::delete" type="service_closure" id=".service_locator.3lSDQI1"/>
         <argument key="App\Controller\Product\ProductController::product_list" type="service_closure" id=".service_locator.n_r6oeK"/>
+        <argument key="App\Controller\Product\SubscriptionController::list" type="service_closure" id=".service_locator.UyRPqbW"/>
+        <argument key="App\Controller\Product\SubscriptionController::subscriptiondelete" type="service_closure" id=".service_locator.j78IDNb"/>
         <argument key="App\Kernel::loadRoutes" type="service_closure" id=".service_locator.y4_Zrx."/>
         <argument key="App\Kernel::registerContainerConfiguration" type="service_closure" id=".service_locator.y4_Zrx."/>
         <argument key="kernel::loadRoutes" type="service_closure" id=".service_locator.y4_Zrx."/>
@@ -7561,6 +7592,8 @@
         <argument key="App\Controller\Product\ProductController:EditProduct" type="service_closure" id=".service_locator.3lSDQI1"/>
         <argument key="App\Controller\Product\ProductController:delete" type="service_closure" id=".service_locator.3lSDQI1"/>
         <argument key="App\Controller\Product\ProductController:product_list" type="service_closure" id=".service_locator.n_r6oeK"/>
+        <argument key="App\Controller\Product\SubscriptionController:list" type="service_closure" id=".service_locator.UyRPqbW"/>
+        <argument key="App\Controller\Product\SubscriptionController:subscriptiondelete" type="service_closure" id=".service_locator.j78IDNb"/>
         <argument key="kernel:loadRoutes" type="service_closure" id=".service_locator.y4_Zrx."/>
         <argument key="kernel:registerContainerConfiguration" type="service_closure" id=".service_locator.y4_Zrx."/>
       </argument>
@@ -7850,10 +7883,11 @@
         <argument key="turbo.doctrine.event_listener" type="service_closure" id="turbo.doctrine.event_listener"/>
       </argument>
     </service>
-    <service id=".service_locator.hZm4rIX" class="Symfony\Component\DependencyInjection\ServiceLocator">
+    <service id=".service_locator.rLY3JFN" class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
       <argument type="collection">
         <argument key="App\Repository\Product\ProductRepository" type="service_closure" id="App\Repository\Product\ProductRepository"/>
+        <argument key="App\Repository\Product\ProductSubscriptionRepository" type="service_closure" id="App\Repository\Product\ProductSubscriptionRepository"/>
       </argument>
     </service>
     <service id=".service_locator.KLVvNIq" class="Symfony\Component\DependencyInjection\ServiceLocator">
@@ -8199,6 +8233,12 @@
       <argument type="service" id="service_container"/>
       <factory service=".service_locator.O2p6Lk7" method="withContext"/>
     </service>
+    <service id=".service_locator.O2p6Lk7.App\Controller\Product\SubscriptionController" class="Symfony\Component\DependencyInjection\ServiceLocator">
+      <tag name="container.service_locator_context" id="App\Controller\Product\SubscriptionController"/>
+      <argument>App\Controller\Product\SubscriptionController</argument>
+      <argument type="service" id="service_container"/>
+      <factory service=".service_locator.O2p6Lk7" method="withContext"/>
+    </service>
     <service id=".service_locator.fuYM_Z." class="Symfony\Component\DependencyInjection\ServiceLocator">
       <tag name="container.service_locator"/>
       <argument type="collection">
@@ -8375,6 +8415,7 @@
           <argument>App\Kernel</argument>
           <argument>App\Controller\LandingPage</argument>
           <argument>App\Controller\Product\ProductController</argument>
+          <argument>App\Controller\Product\SubscriptionController</argument>
           <argument>Doctrine\Bundle\DoctrineBundle\Controller\ProfilerController</argument>
         </argument>
       </call>
@@ -9769,7 +9810,7 @@
     <service id="doctrine.fixtures.provider" alias="doctrine.fixtures.loader"/>
     <service id="container.env_var_processors_locator" alias=".service_locator.w7.f4fT" public="true"/>
     <service id="twig.loader.filesystem" alias="twig.loader.native_filesystem"/>
-    <service id="argument_resolver.controller_locator" alias=".service_locator.tKUE.9."/>
+    <service id="argument_resolver.controller_locator" alias=".service_locator.JtmS9P0"/>
     <service id="doctrine.id_generator_locator" alias=".service_locator.KLVvNIq"/>
     <service id="twig.loader" alias="twig.loader.native_filesystem"/>
     <service id=".Psr\Log\LoggerInterface $request.logger" alias="monolog.logger.request"/>
@@ -9809,7 +9850,8 @@
     <service id=".service_locator.bJ.4HC5" alias=".service_locator.w7.f4fT"/>
     <service id=".service_locator.H.akLIP" alias=".service_locator.3lSDQI1"/>
     <service id=".service_locator.fY.sYpn" alias=".service_locator.jXvCdB8"/>
-    <service id=".service_locator.6B_i.Zx" alias=".service_locator.tKUE.9."/>
+    <service id=".service_locator.K7mhCYx" alias=".service_locator.j78IDNb"/>
+    <service id=".service_locator.U9aC3CL" alias=".service_locator.JtmS9P0"/>
     <service id=".service_locator.BFrsqsn" alias=".service_locator.F9PKc.7"/>
     <service id=".service_locator.Za9MpXe" alias=".service_locator.y4dplYt"/>
     <service id=".service_locator.XtmiKbi" alias=".service_locator.MfxSDRP"/>
@@ -9838,6 +9880,8 @@
     <service id=".service_locator.Ca6K1aU" alias=".service_locator.n_r6oeK"/>
     <service id=".service_locator.ukZCKD9" alias=".service_locator.3lSDQI1"/>
     <service id=".service_locator.5GujqM3" alias=".service_locator.jXvCdB8"/>
+    <service id=".service_locator.3llYWHs" alias=".service_locator.UyRPqbW"/>
+    <service id=".service_locator.N75nn8A" alias=".service_locator.j78IDNb"/>
     <service id=".service_locator.Q1z.f9O" alias=".service_locator.O2p6Lk7"/>
     <service id=".service_locator.dGUCsbe" alias=".service_locator.oR77BOj"/>
     <service id=".service_locator._kIAbz1" alias=".service_locator.TpoC7U9"/>

@@ -18,6 +18,7 @@ return [
         '/Product/List' => [[['_route' => 'product_list', '_controller' => 'App\\Controller\\Product\\ProductController::product_list'], null, null, null, false, false, null]],
         '/EditProduct' => [[['_route' => 'EditProduct', '_controller' => 'App\\Controller\\Product\\ProductController::EditProduct'], null, ['GET' => 0, 'POST' => 1], null, false, false, null]],
         '/CreateProduct' => [[['_route' => 'CreateProduct', '_controller' => 'App\\Controller\\Product\\ProductController::CreateProduct'], null, ['GET' => 0, 'POST' => 1], null, false, false, null]],
+        '/subscriptionslist' => [[['_route' => 'subscription_list', '_controller' => 'App\\Controller\\Product\\SubscriptionController::list'], null, ['GET' => 0], null, false, false, null]],
     ],
     [ // $regexpList
         0 => '{^(?'
@@ -40,6 +41,7 @@ return [
                     .')'
                 .')'
                 .'|/deleteProduct/([^/]++)(*:225)'
+                .'|/subscriptiondelete/([^/]++)(*:261)'
             .')/?$}sDu',
     ],
     [ // $dynamicRoutes
@@ -51,8 +53,9 @@ return [
         168 => [[['_route' => '_profiler_exception', '_controller' => 'web_profiler.controller.exception_panel::body'], ['token'], null, null, false, false, null]],
         181 => [[['_route' => '_profiler_exception_css', '_controller' => 'web_profiler.controller.exception_panel::stylesheet'], ['token'], null, null, false, false, null]],
         191 => [[['_route' => '_profiler', '_controller' => 'web_profiler.controller.profiler::panelAction'], ['token'], null, null, false, true, null]],
-        225 => [
-            [['_route' => 'product_delete', '_controller' => 'App\\Controller\\Product\\ProductController::delete'], ['id'], ['POST' => 0], null, false, true, null],
+        225 => [[['_route' => 'product_delete', '_controller' => 'App\\Controller\\Product\\ProductController::delete'], ['id'], ['POST' => 0], null, false, true, null]],
+        261 => [
+            [['_route' => 'subscriptiondelete', '_controller' => 'App\\Controller\\Product\\SubscriptionController::subscriptiondelete'], ['id'], ['POST' => 0], null, false, true, null],
             [null, null, null, null, false, false, 0],
         ],
     ],
