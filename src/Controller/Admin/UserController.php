@@ -286,7 +286,7 @@ class UserController extends AbstractController
     /**
      * Exporte la liste filtrée en CSV (téléchargement direct).
      */
-    #[Route('/export/csv', name: 'export_csv', methods: ['GET'])]
+    #[Route('/export/csv', name: 'admin_user_export_csv', methods: ['GET'])]
     public function exportCsv(Request $request): Response
     {
         $users = $this->userRepository
@@ -300,7 +300,7 @@ class UserController extends AbstractController
     /**
      * Exporte la liste filtrée en HTML imprimable (PDF via window.print).
      */
-    #[Route('/export/pdf', name: 'export_pdf', methods: ['GET'])]
+    #[Route('/export/pdf', name: 'admin_user_export_pdf', methods: ['GET'])]
     public function exportPdf(Request $request): Response
     {
         $users = $this->userRepository
