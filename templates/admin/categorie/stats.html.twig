@@ -1,0 +1,62 @@
+{% extends 'admin/back.html.twig' %}
+
+{% block title %}Statistiques des Catégories{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 class="h3 mb-0 text-gray-800">Statistiques des Catégories</h1>
+            <p class="text-muted">Aperçu des budgets, items et alertes par catégorie.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for stat in stats %}
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">{{ stat.categorie.nomCategorie }}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Budget Prévu</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ stat.categorie.budgetPrevu|number_format(2, ',', ' ') }} €
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Total Dépensé</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ stat.totalAmount|number_format(2, ',', ' ') }} €
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Nombre d'Items</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stat.itemCount }}</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="text-xs font-weight-bold text-uppercase mb-1">Alertes Actives</div>
+                            <div class="h5 mb-0 font-weight-bold text-danger">{{ stat.alertesCount }}</div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="progress mb-2">
+                        <div class="progress-bar {% if stat.budgetUsage > 90 %}bg-danger{% elseif stat.budgetUsage > 75 %}bg-warning{% else %}bg-success{% endif %}"
+                             role="progressbar" style="width: {{ stat.budgetUsage }}%"
+                             aria-valuenow="{{ stat.budgetUsage }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ stat.budgetUsage|round(1) }}%
+                        </div>
+                    </div>
+                    <small class="text-muted">Utilisation du budget</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

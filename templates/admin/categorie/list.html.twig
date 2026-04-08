@@ -1,0 +1,78 @@
+{% extends 'admin/back.html.twig' %}
+
+{% block title %}Liste des Catégories{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3 mb-0 text-gray-800">Catégories</h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ path('admin_categorie_stats') }}" class="btn btn-info me-2">
+                <i class="fas fa-chart-bar"></i> Statistiques
+            </a>
+            <a href="{{ path('admin_categorie_create') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nouvelle Catégorie
+            </a>
+        </div>
+    </div>
+
+    {% for message in app.flashes('success') %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+
+    {% if categories|length > 0 %}
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom</th>
+                            <th>Budget Prévu</th>
+                            <th>Seuil d'Alerte</th>
+                            <th>Nombre d'Items</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for categorie in categories %}
+                        <tr>
+                            <td>{{ categorie.idCategorie }}</td>
+                            <td>{{ categorie.nomCategorie }}</td>
+                            <td>{{ categorie.budgetPrevu|number_format(2, ',', ' ') }} €</td>
+                            <td>{{ categorie.seuilAlerte|number_format(2, ',', ' ') }} €</td>
+                            <td><span class="badge bg-info">{{ categorie.items|length }}</span></td>
+                            <td>
+                                <a href="{{ path('admin_categorie_show', {'idCategorie': categorie.idCategorie}) }}" 
+                                   class="btn btn-sm btn-info" title="Voir">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ path('admin_categorie_edit', {'idCategorie': categorie.idCategorie}) }}" 
+                                   class="btn btn-sm btn-warning" title="Modifier">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{{ path('admin_categorie_delete', {'idCategorie': categorie.idCategorie}) }}" 
+                                   class="btn btn-sm btn-danger" title="Supprimer">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        <i class="fas fa-info-circle"></i> Aucune catégorie trouvée. <a href="{{ path('admin_categorie_create') }}">Créer une nouvelle</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
