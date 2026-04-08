@@ -2,33 +2,28 @@
 
 namespace App\Service;
 
+use App\Entity\User\Client\Kyc;
+use App\Entity\User\Client\KycFile;
 use App\Entity\User\Client\Notification;
 use App\Entity\User\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-/**
- * Service métier — Gestion des utilisateurs.
- *
- * Centralise la logique d'inscription, d'activation, de suspension,
- * de suppression et de mise à jour du profil.
- */
 class UserService
 {
     public function __construct(
-        private readonly EntityManagerInterface      $em,
-        private readonly UserRepository              $userRepository,
+        private readonly EntityManagerInterface $em,
+        private readonly UserRepository $userRepository,
         private readonly UserPasswordHasherInterface $passwordHasher,
-        private readonly QrCodeService               $qrCodeService,
-        private readonly BehavioralProfileService    $behavioralProfileService,
-        private readonly NotificationService         $notificationService,
+        private readonly QrCodeService $qrCodeService,
+        private readonly BehavioralProfileService $behavioralProfileService,
+        private readonly NotificationService $notificationService,
+        #[Autowire('%kernel.project_dir%')]
+        private readonly string $projectDir,
     ) {}
 
-    /**
-     * Inscrit un nouvel utilisateur CLIENT.
-     * Hash le mot de passe, génère un QR token, définit le statut initial.
-     */
     public function registerClient(User $user, string $plainPassword): void
     {
         $user->setRole(User::ROLE_CLIENT);
@@ -36,58 +31,118 @@ class UserService
         $user->setCreatedAt(new \DateTime());
         $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
         $user->setQrToken($this->qrCodeService->generateToken());
+        $user->setIsVerified(false);
+
+        $this->refreshEmailVerificationCode($user, false);
 
         $this->em->persist($user);
         $this->em->flush();
         $this->behavioralProfileService->refreshUserBehavior($user);
     }
 
-    /**
-     * Crée un client depuis le back-office admin.
-     * Le statut/KYC sont définis dans le formulaire admin.
-     */
     public function createClientByAdmin(User $user, string $plainPassword): void
     {
         $user->setRole(User::ROLE_CLIENT);
         $user->setCreatedAt(new \DateTime());
         $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
         $user->setQrToken($this->qrCodeService->generateToken());
+        $user->setIsVerified(true);
+        $user->setEmailVerificationCode(null);
+        $user->setEmailVerificationExpiresAt(null);
+        $user->setEmailVerifiedAt(new \DateTime());
 
         $this->em->persist($user);
         $this->em->flush();
         $this->behavioralProfileService->refreshUserBehavior($user);
     }
 
-    /**
-     * Active le compte d'un utilisateur (statut → ACTIF).
-     */
+    public function refreshEmailVerificationCode(User $user, bool $flush = true): string
+    {
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        $user->setIsVerified(false);
+        $user->setEmailVerificationCode($code);
+        $user->setEmailVerificationExpiresAt(new \DateTime('+10 minutes'));
+        $user->setEmailVerifiedAt(null);
+
+        if ($flush) {
+            $this->em->flush();
+        }
+
+        return $code;
+    }
+
+    public function isVerificationCodeExpired(User $user): bool
+    {
+        return $user->isEmailVerificationExpired();
+    }
+
+    public function isVerificationCodeValid(User $user, string $submittedCode): bool
+    {
+        return $user->getEmailVerificationCode() !== null
+            && hash_equals($user->getEmailVerificationCode(), trim($submittedCode))
+            && !$this->isVerificationCodeExpired($user);
+    }
+
+    public function markEmailAsVerified(User $user): void
+    {
+        $user->setIsVerified(true);
+        $user->setEmailVerificationCode(null);
+        $user->setEmailVerificationExpiresAt(null);
+        $user->setEmailVerifiedAt(new \DateTime());
+        $this->em->flush();
+    }
+
     public function activateUser(User $user): void
     {
         $user->setStatus(User::STATUS_ACTIF);
         $this->em->flush();
     }
 
-    /**
-     * Suspend le compte d'un utilisateur (statut → SUSPENDU).
-     */
     public function suspendUser(User $user): void
     {
         $user->setStatus(User::STATUS_SUSPENDU);
         $this->em->flush();
     }
 
-    /**
-     * Supprime définitivement un utilisateur.
-     */
     public function deleteUser(User $user): void
     {
+        /** @var Kyc[] $kycRecords */
+        $kycRecords = $this->em->getRepository(Kyc::class)->findBy(['user' => $user]);
+
+        foreach ($kycRecords as $kyc) {
+            foreach ($kyc->getFiles() as $file) {
+                $this->deleteKycFileArtifact($file);
+                $this->em->remove($file);
+            }
+
+            $this->deleteRelativeFile($kyc->getSignaturePath());
+            $this->em->remove($kyc);
+        }
+
+        $user->setCurrentKycId(null);
         $this->em->remove($user);
         $this->em->flush();
     }
 
-    /**
-     * Persiste les modifications du profil d'un utilisateur.
-     */
+    private function deleteKycFileArtifact(KycFile $file): void
+    {
+        $this->deleteRelativeFile($file->getFilePath());
+    }
+
+    private function deleteRelativeFile(?string $relativePath): void
+    {
+        if ($relativePath === null || $relativePath === '') {
+            return;
+        }
+
+        $absolutePath = $this->projectDir . '/public/' . ltrim($relativePath, '/');
+
+        if (is_file($absolutePath)) {
+            @unlink($absolutePath);
+        }
+    }
+
     public function updateProfile(User $user, ?string $plainPassword = null): void
     {
         $previousRiskLevel = $user->getRiskLevel();
@@ -107,17 +162,12 @@ class UserService
         }
     }
 
-    /**
-     * Trouve un utilisateur par son QR token unique.
-     */
     public function findByQrToken(string $token): ?User
     {
         return $this->userRepository->findOneBy(['qrToken' => $token]);
     }
 
     /**
-     * Retourne les notifications d'un utilisateur, triées par date décroissante.
-     *
      * @return Notification[]
      */
     public function getNotifications(User $user): array

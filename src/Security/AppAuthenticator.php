@@ -10,8 +10,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Symfony\Component\Security\Http\Authenticator\AbstractLoginFormAuthenticator;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\CsrfTokenBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
@@ -59,9 +59,15 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
                         throw new CustomUserMessageAuthenticationException('Identifiants invalides.');
                     }
 
+                    if (!$user->isVerified()) {
+                        throw new CustomUserMessageAuthenticationException(
+                            'Votre adresse e-mail n est pas encore verifiee. Saisissez votre code de verification avant de vous connecter.'
+                        );
+                    }
+
                     if ($adminLogin && !$user->isAdmin()) {
                         throw new CustomUserMessageAuthenticationException(
-                            'Cette page est réservée aux administrateurs.'
+                            'Cette page est reservee aux administrateurs.'
                         );
                     }
 
@@ -84,7 +90,7 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
 
         if ($user->getStatus() === User::STATUS_SUSPENDU) {
             throw new CustomUserMessageAuthenticationException(
-                'Votre compte a été suspendu. Veuillez contacter le support FinTrust.'
+                'Votre compte a ete suspendu. Veuillez contacter le support FinTrust.'
             );
         }
 

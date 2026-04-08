@@ -22,6 +22,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[IsGranted('ROLE_CLIENT')]
 #[Route('/espace-client', name: 'front_')]
@@ -63,6 +64,7 @@ class ClientController extends AbstractController
         private readonly QrCodeService $qrCodeService,
         private readonly KycAccessChecker $kycAccessChecker,
         private readonly RiskAccessChecker $riskAccessChecker,
+        private readonly ValidatorInterface $validator,
         private readonly BehavioralProfileService $behavioralProfileService,
     ) {}
 
@@ -159,12 +161,41 @@ class ClientController extends AbstractController
         $captcha = $captchaService->getOrCreateChallenge($request->getSession(), 'kyc_submit');
 
         if ($form->isSubmitted()) {
-            /** @var \Symfony\Component\HttpFoundation\File\UploadedFile[]|\Symfony\Component\HttpFoundation\File\UploadedFile|null $rawFiles */
-            $rawFiles = $form->get('documents')->getData();
-            $files = is_array($rawFiles) ? array_values(array_filter($rawFiles)) : ($rawFiles ? [$rawFiles] : []);
-            $signatureData = (string) ($form->get('signatureData')->getData() ?? '');
+            $payload = $request->request->all()[$form->getName()] ?? [];
+            $filesBag = $request->files->all()[$form->getName()] ?? [];
 
-            if ($form->isValid() && !$captchaService->validateAnswer(
+            $kyc->setCin((string) ($payload['cin'] ?? ''));
+            $kyc->setAdresse((string) ($payload['adresse'] ?? ''));
+
+            if (!empty($payload['dateNaissance'])) {
+                try {
+                    $kyc->setDateNaissance(new \DateTime((string) $payload['dateNaissance']));
+                } catch (\Exception) {
+                    // La validation Symfony remontera une erreur lisible si la date n'est pas correcte.
+                }
+            }
+
+            /** @var \Symfony\Component\HttpFoundation\File\UploadedFile[]|\Symfony\Component\HttpFoundation\File\UploadedFile|null $rawFiles */
+            $rawFiles = $filesBag['documents'] ?? $form->get('documents')->getData();
+            $files = is_array($rawFiles) ? array_values(array_filter($rawFiles)) : ($rawFiles ? [$rawFiles] : []);
+            $signatureData = (string) ($payload['signatureData'] ?? $form->get('signatureData')->getData() ?? '');
+
+            $entityErrors = $this->validator->validate($kyc);
+
+            if (count($entityErrors) > 0) {
+                $shown = [];
+                foreach ($entityErrors as $error) {
+                    $message = $error->getMessage();
+                    if (!in_array($message, $shown, true)) {
+                        $this->addFlash('error', $message);
+                        $shown[] = $message;
+                    }
+                }
+            } elseif ($files === []) {
+                $this->addFlash('error', 'Veuillez joindre au moins un document justificatif.');
+            } elseif (!$this->hasValidKycFiles($files)) {
+                $this->addFlash('error', 'Chaque justificatif doit etre en JPG, PNG ou PDF, avec une taille maximale de 5 Mo.');
+            } elseif (!$captchaService->validateAnswer(
                 $request->getSession(),
                 'kyc_submit',
                 (string) $request->request->get('captcha_token', ''),
@@ -173,7 +204,7 @@ class ClientController extends AbstractController
                 $captchaService->refreshChallenge($request->getSession(), 'kyc_submit');
                 $captcha = $captchaService->getOrCreateChallenge($request->getSession(), 'kyc_submit');
                 $this->addFlash('error', 'Le CAPTCHA KYC est invalide. Veuillez recommencer.');
-            } elseif ($form->isValid()) {
+            } else {
                 try {
                     $this->kycService->submitKyc($user, $kyc, $files, $signatureData);
                     $this->notificationService->notifyKycSubmitted($user);
@@ -197,6 +228,31 @@ class ClientController extends AbstractController
             'user' => $user,
             'captcha' => $captcha,
         ]);
+    }
+
+    /**
+     * @param \Symfony\Component\HttpFoundation\File\UploadedFile[] $files
+     */
+    private function hasValidKycFiles(array $files): bool
+    {
+        $allowedMimeTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+        $maxSize = 5 * 1024 * 1024;
+
+        foreach ($files as $file) {
+            if (!$file) {
+                return false;
+            }
+
+            if (!in_array($file->getMimeType(), $allowedMimeTypes, true)) {
+                return false;
+            }
+
+            if (($file->getSize() ?? 0) > $maxSize) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     #[Route('/kyc/statut', name: 'kyc_status')]

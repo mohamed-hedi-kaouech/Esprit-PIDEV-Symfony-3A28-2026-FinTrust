@@ -16,7 +16,11 @@ final class Version20260408093000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->skipIf($this->connection->getDatabasePlatform()->getName() !== 'mysql', 'Migration only safe on MySQL.');
+        $platformClass = $this->connection->getDatabasePlatform()::class;
+        $this->skipIf(
+            !str_contains($platformClass, 'MySQL') && !str_contains($platformClass, 'MariaDB'),
+            'Migration only safe on MySQL/MariaDB.'
+        );
 
         $projectDir = dirname(__DIR__);
         $targetDir = $projectDir . '/public/uploads/kyc-files';

@@ -159,6 +159,97 @@ body.ft-theme-dark .ft-theme-pill.active {
 .ft-auth-logo { display: inline-flex; }
 .ft-auth-title { font-family: var(--ft-font-display); font-size: 1.9rem; font-weight: 700; color: #0f172a; }
 
+.ft-verify-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 460px);
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.ft-verify-side {
+  padding: 2.5rem;
+  border-radius: 28px;
+  border: 1px solid rgba(21,96,189,.08);
+  background:
+    radial-gradient(circle at top right, rgba(59,130,246,.18), transparent 32%),
+    linear-gradient(135deg, #ffffff 0%, #edf5ff 58%, #dbeafe 100%);
+  box-shadow: 0 22px 54px rgba(21,96,189,.12);
+}
+
+.ft-verify-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  margin-bottom: 1rem;
+  padding: .5rem .9rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,.85);
+  color: #1d4ed8;
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+.ft-verify-copy {
+  max-width: 580px;
+  color: #516682;
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.ft-verify-points {
+  display: grid;
+  gap: 1rem;
+}
+
+.ft-verify-point {
+  display: flex;
+  gap: .9rem;
+  padding: 1rem 1.05rem;
+  border-radius: 18px;
+  background: rgba(255,255,255,.82);
+  border: 1px solid rgba(21,96,189,.08);
+}
+
+.ft-verify-point i {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.ft-verify-point strong {
+  display: block;
+  margin-bottom: .15rem;
+  color: #10233f;
+}
+
+.ft-verify-point span {
+  color: #64748b;
+  font-size: .92rem;
+  line-height: 1.6;
+}
+
+.ft-verify-card {
+  align-self: center;
+}
+
+.ft-verify-title {
+  font-size: 1.75rem;
+}
+
+.ft-verify-code-input {
+  letter-spacing: .35em;
+  font-size: 1.2rem;
+  text-align: center;
+  font-weight: 700;
+}
+
 /* ---- Indicateur force mot de passe ---- */
 .ft-pwd-strength { height: 4px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
 .ft-pwd-bar { height: 100%; width: 0; border-radius: 4px; transition: width .3s, background .3s; }
@@ -557,6 +648,12 @@ body.ft-theme-dark .ft-theme-pill.active {
   .ft-auth-card { padding: 1.75rem 1.25rem; }
   .ft-page-title { font-size: 1.4rem; }
   .ft-steps { flex-wrap: wrap; }
+  .ft-verify-shell {
+    grid-template-columns: 1fr;
+  }
+  .ft-verify-side {
+    padding: 1.5rem;
+  }
   .ft-notif-hero {
     flex-direction: column;
     align-items: flex-start;

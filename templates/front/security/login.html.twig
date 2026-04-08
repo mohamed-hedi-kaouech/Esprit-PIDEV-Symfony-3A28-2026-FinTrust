@@ -10,7 +10,7 @@
         <div class="ft-auth-card">
           <div class="ft-auth-header text-center mb-4">
             <div class="ft-auth-logo mb-3">
-              <a href="{{ path('app') }}" class="d-inline-flex text-decoration-none" title="Retour à l'accueil">
+              <a href="{{ path('app') }}" class="d-inline-flex text-decoration-none" title="Retour a l accueil">
                 <svg viewBox="0 0 40 40" fill="none" width="48" height="48">
                   <rect width="40" height="40" rx="10" fill="#1560BD"/>
                   <path d="M10 28V18l10-8 10 8v10H24v-6h-8v6H10Z" fill="white"/>
@@ -18,7 +18,7 @@
               </a>
             </div>
             <h1 class="ft-auth-title">Bon retour</h1>
-            <p class="text-muted">Connectez-vous à votre espace client FinTrust</p>
+            <p class="text-muted">Connectez-vous a votre espace client FinTrust</p>
           </div>
 
           {% if error %}
@@ -36,7 +36,7 @@
                 <i class="bi bi-envelope me-1 text-primary"></i>Adresse e-mail
               </label>
               <input
-                type="email"
+                type="text"
                 id="email"
                 name="email"
                 value="{{ last_username }}"
@@ -78,7 +78,7 @@
                   <span class="ft-captcha-box"><i class="bi bi-check-lg"></i></span>
                   <span class="ft-captcha-label">{{ captcha.label }}</span>
                 </label>
-                <div class="form-text">La verification s'active apres plusieurs tentatives echouees.</div>
+                <div class="form-text">La verification s active apres plusieurs tentatives echouees.</div>
               </div>
             {% endif %}
 
@@ -90,8 +90,13 @@
           <div class="text-center mt-4">
             <span class="text-muted small">Pas encore de compte ?</span>
             <a href="{{ path('app_register') }}" class="ms-1 fw-semibold text-primary text-decoration-none">
-              Créer un compte
+              Creer un compte
             </a>
+            <div class="mt-2">
+              <a href="{{ path('app_verify_account', last_username ? {email: last_username} : {}) }}" class="small fw-semibold text-decoration-none">
+                Verifier mon adresse e-mail
+              </a>
+            </div>
           </div>
         </div>
       </div>
