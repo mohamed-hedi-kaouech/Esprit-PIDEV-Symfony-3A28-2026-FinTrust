@@ -17,6 +17,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * Contrôleur Admin — Gestion des utilisateurs (BackOffice)
@@ -38,6 +40,7 @@ class UserController extends AbstractController
         private readonly ExportService       $exportService,
         private readonly NotificationService $notificationService,
         private readonly QrCodeService       $qrCodeService,
+        private readonly ValidatorInterface  $validator,
     ) {}
 
     // =========================================================================
@@ -236,12 +239,21 @@ class UserController extends AbstractController
         $type = strtoupper((string) $request->request->get('type', 'INFO'));
         $allowedTypes = ['INFO', 'SUCCESS', 'WARNING', 'ERROR'];
         $type = in_array($type, $allowedTypes, true) ? $type : 'INFO';
+        $errors = $this->validator->validate($message, [
+            new Assert\NotBlank(['message' => 'Le message ne peut pas etre vide.']),
+            new Assert\Length([
+                'min' => 5,
+                'minMessage' => 'Le message doit contenir au moins {{ limit }} caracteres.',
+                'max' => 500,
+                'maxMessage' => 'Le message ne peut pas depasser {{ limit }} caracteres.',
+            ]),
+        ]);
 
-        if (!empty($message)) {
+        if (count($errors) === 0) {
             $this->notificationService->notify($user, $message, $type);
             $this->addFlash('success', 'Notification envoyée à ' . $user->getFullName());
         } else {
-            $this->addFlash('error', 'Le message ne peut pas être vide.');
+            $this->addFlash('error', (string) $errors[0]->getMessage());
         }
 
         return $this->redirectToRoute('admin_user_edit', ['id' => $user->getId()]);
@@ -268,8 +280,18 @@ class UserController extends AbstractController
             return $this->redirectToRoute('admin_dashboard');
         }
 
-        if ($message === '') {
-            $this->addFlash('error', 'Le message ne peut pas être vide.');
+        $errors = $this->validator->validate($message, [
+            new Assert\NotBlank(['message' => 'Le message ne peut pas etre vide.']),
+            new Assert\Length([
+                'min' => 5,
+                'minMessage' => 'Le message doit contenir au moins {{ limit }} caracteres.',
+                'max' => 500,
+                'maxMessage' => 'Le message ne peut pas depasser {{ limit }} caracteres.',
+            ]),
+        ]);
+
+        if (count($errors) > 0) {
+            $this->addFlash('error', (string) $errors[0]->getMessage());
             return $this->redirectToRoute('admin_dashboard');
         }
 

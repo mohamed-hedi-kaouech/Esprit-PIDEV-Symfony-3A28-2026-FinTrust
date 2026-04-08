@@ -24,20 +24,21 @@ class ProfileFormType extends AbstractType
         $builder
             ->add('nom', TextType::class, [
                 'label' => 'Nom',
+                'required' => false,
                 'attr'  => [
                     'placeholder' => 'Votre nom',
-                    'maxlength'   => 50,
                 ],
             ])
             ->add('prenom', TextType::class, [
                 'label' => 'Prénom',
+                'required' => false,
                 'attr'  => [
                     'placeholder' => 'Votre prénom',
-                    'maxlength'   => 50,
                 ],
             ])
             ->add('email', EmailType::class, [
                 'label' => 'Adresse e-mail',
+                'required' => false,
                 'attr'  => ['placeholder' => 'exemple@fintrust.tn'],
             ])
             ->add('numTel', TelType::class, [
@@ -49,6 +50,7 @@ class ProfileFormType extends AbstractType
             ])
             ->add('preferredLanguage', ChoiceType::class, [
                 'label' => 'Langue',
+                'required' => false,
                 'choices' => [
                     'Français' => User::LANGUAGE_FR,
                     'English' => User::LANGUAGE_EN,
@@ -57,6 +59,7 @@ class ProfileFormType extends AbstractType
             ])
             ->add('themeMode', ChoiceType::class, [
                 'label' => 'Mode d’affichage',
+                'required' => false,
                 'choices' => [
                     'Clair' => User::THEME_LIGHT,
                     'Sombre' => User::THEME_DARK,

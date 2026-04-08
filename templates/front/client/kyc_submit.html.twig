@@ -45,8 +45,7 @@
         attr: {
           novalidate: 'novalidate',
           enctype: 'multipart/form-data',
-          id: 'kycForm',
-          class: 'needs-validation'
+          id: 'kycForm'
         }
       }) }}
 
@@ -82,7 +81,7 @@
           <div class="col-lg-7">
             {{ form_label(form.documents, null, {label_attr: {class: 'form-label fw-semibold'}}) }}
             <div class="ft-upload-zone" id="uploadZone">
-              {{ form_widget(form.documents, {attr: {class: 'ft-file-input', id: 'kycFiles', accept: '.jpg,.jpeg,.png,.pdf', multiple: 'multiple'}}) }}
+              {{ form_widget(form.documents, {attr: {class: 'ft-file-input', id: 'kycFiles'}}) }}
               <div class="ft-upload-placeholder" id="uploadPlaceholder">
                 <i class="bi bi-images fs-2 text-primary mb-2 d-block"></i>
                 <strong>Déposez plusieurs fichiers ici</strong> ou cliquez pour sélectionner

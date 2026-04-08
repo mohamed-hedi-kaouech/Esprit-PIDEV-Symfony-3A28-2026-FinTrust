@@ -33,8 +33,7 @@
           {{ form_start(registrationForm, {
             attr: {
               id: 'registerForm',
-              novalidate: 'novalidate',
-              class: 'needs-validation'
+              novalidate: 'novalidate'
             }
           }) }}
 
@@ -100,10 +99,6 @@
                   <i class="bi bi-eye" id="togglePwd1Icon"></i>
                 </button>
               </div>
-              {# Indicateur de force du mot de passe #}
-              <div class="ft-pwd-strength mt-1" id="pwdStrength">
-                <div class="ft-pwd-bar" id="pwdBar"></div>
-              </div>
               <small class="text-muted">Majuscule, minuscule et chiffre requis.</small>
               {% if registrationForm.plainPassword.first.vars.errors|length > 0 %}
                 <div class="text-danger small mt-1">{{ form_errors(registrationForm.plainPassword.first) }}</div>
@@ -121,7 +116,6 @@
                   <i class="bi bi-eye" id="togglePwd2Icon"></i>
                 </button>
               </div>
-              <div id="pwdMatchFeedback" class="small mt-1"></div>
               {% if registrationForm.plainPassword.second.vars.errors|length > 0 %}
                 <div class="text-danger small mt-1">{{ form_errors(registrationForm.plainPassword.second) }}</div>
               {% endif %}
@@ -167,30 +161,5 @@
   togglePassword('togglePwd1', 'pwd1', 'togglePwd1Icon');
   togglePassword('togglePwd2', 'pwd2', 'togglePwd2Icon');
 
-  // ---- Indicateur de force du mot de passe ----
-  document.getElementById('pwd1')?.addEventListener('input', function() {
-    const val = this.value;
-    const bar = document.getElementById('pwdBar');
-    let score = 0;
-    if (val.length >= 8)              score++;
-    if (/[A-Z]/.test(val))            score++;
-    if (/[a-z]/.test(val))            score++;
-    if (/\d/.test(val))               score++;
-    if (/[^A-Za-z0-9]/.test(val))     score++;
-    const colors = ['#dc2626','#f97316','#eab308','#22c55e','#16a34a'];
-    const widths = ['20%','40%','60%','80%','100%'];
-    bar.style.width     = score > 0 ? widths[score - 1] : '0';
-    bar.style.background = score > 0 ? colors[score - 1] : 'transparent';
-  });
-
-  // ---- Vérification correspondance mots de passe ----
-  document.getElementById('pwd2')?.addEventListener('input', function() {
-    const feedback = document.getElementById('pwdMatchFeedback');
-    if (this.value === document.getElementById('pwd1').value) {
-      feedback.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Les mots de passe correspondent.</span>';
-    } else {
-      feedback.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Les mots de passe ne correspondent pas.</span>';
-    }
-  });
 </script>
 {% endblock %}

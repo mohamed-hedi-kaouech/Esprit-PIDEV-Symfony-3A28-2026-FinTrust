@@ -31,7 +31,7 @@
       </div>
       <div class="ft-admin-card-body">
 
-        {{ form_start(form, {attr: {novalidate: 'novalidate', id: 'editForm', class: 'needs-validation'}}) }}
+        {{ form_start(form, {attr: {novalidate: 'novalidate', id: 'editForm'}}) }}
 
           {{ form_errors(form) }}
 
@@ -165,7 +165,7 @@
         <i class="bi bi-bell me-2 text-primary"></i>Envoyer une notification
       </div>
       <div class="ft-admin-card-body">
-        <form method="post" action="{{ path('admin_user_notify', {id: user.id}) }}" id="notifyForm">
+        <form method="post" action="{{ path('admin_user_notify', {id: user.id}) }}" id="notifyForm" novalidate="novalidate">
           <input type="hidden" name="_token" value="{{ csrf_token('notify_' ~ user.id) }}"/>
           <div class="mb-3">
             <select name="type" class="form-select ft-input">
@@ -177,8 +177,7 @@
           </div>
           <div class="mb-3">
             <textarea name="message" class="form-control ft-input" rows="3"
-                      placeholder="Message à envoyer à {{ user.prenom }}…"
-                      required minlength="5" maxlength="500"></textarea>
+                      placeholder="Message à envoyer à {{ user.prenom }}…"></textarea>
           </div>
           <button type="submit" class="btn ft-btn-primary w-100">
             <i class="bi bi-send me-2"></i>Envoyer

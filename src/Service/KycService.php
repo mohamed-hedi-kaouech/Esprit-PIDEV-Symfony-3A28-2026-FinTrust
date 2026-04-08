@@ -7,28 +7,25 @@ use App\Entity\User\Client\KycFile;
 use App\Entity\User\User;
 use App\Repository\KycRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
- * Service métier — Gestion du KYC.
+ * Service metier - Gestion du KYC.
  *
- * Gère la soumission, l'approbation et le refus des dossiers KYC.
- * Les fichiers sont stockés en base de données (BLOB).
+ * Gere la soumission, l'approbation et le refus des dossiers KYC.
+ * Les fichiers sont stockes sur le serveur et seul leur chemin est conserve en base.
  */
 class KycService
 {
     public function __construct(
         private readonly EntityManagerInterface $em,
-        private readonly KycRepository          $kycRepository,
+        private readonly KycRepository $kycRepository,
         #[Autowire('%kernel.project_dir%')]
-        private readonly string                 $projectDir,
+        private readonly string $projectDir,
     ) {}
 
     /**
-     * Soumet un nouveau dossier KYC pour un utilisateur.
-     * Persiste le KYC et ses fichiers justificatifs en base.
-     *
      * @param UploadedFile[] $uploadedFiles
      */
     public function submitKyc(User $user, Kyc $kyc, array $uploadedFiles, string $signatureData): void
@@ -38,13 +35,12 @@ class KycService
         $kyc->setDateSubmission(new \DateTime());
         $this->storeSignature($kyc, $signatureData);
 
-        // Persistance de chaque fichier justificatif
         foreach ($uploadedFiles as $uploadedFile) {
             $kycFile = new KycFile();
             $kycFile->setFileName($uploadedFile->getClientOriginalName());
             $kycFile->setFileType($uploadedFile->getMimeType() ?? 'application/octet-stream');
-            $kycFile->setFileSize($uploadedFile->getSize());
-            $kycFile->setFileData(file_get_contents($uploadedFile->getPathname()));
+            $kycFile->setFileSize((int) ($uploadedFile->getSize() ?? 0));
+            $kycFile->setFilePath($this->storeUploadedFile($uploadedFile));
             $kycFile->setUpdatedAt(new \DateTime());
             $kyc->addFile($kycFile);
             $this->em->persist($kycFile);
@@ -52,13 +48,28 @@ class KycService
 
         $this->em->persist($kyc);
 
-        // Mise à jour du statut KYC sur l'utilisateur
         $user->setKycStatus(User::KYC_EN_ATTENTE);
         $this->em->flush();
 
-        // Mise à jour de l'ID KYC courant après flush (ID généré par la BDD)
         $user->setCurrentKycId($kyc->getId());
         $this->em->flush();
+    }
+
+    private function storeUploadedFile(UploadedFile $uploadedFile): string
+    {
+        $directory = $this->projectDir . '/public/uploads/kyc-files';
+        if (!is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        $safeBaseName = pathinfo($uploadedFile->getClientOriginalName(), PATHINFO_FILENAME);
+        $safeBaseName = preg_replace('/[^A-Za-z0-9_-]+/', '_', $safeBaseName) ?: 'kyc_file';
+        $extension = $uploadedFile->guessExtension() ?: $uploadedFile->getClientOriginalExtension() ?: 'bin';
+        $filename = sprintf('%s_%s.%s', $safeBaseName, bin2hex(random_bytes(8)), $extension);
+
+        $uploadedFile->move($directory, $filename);
+
+        return 'uploads/kyc-files/' . $filename;
     }
 
     private function storeSignature(Kyc $kyc, string $signatureData): void
@@ -84,9 +95,6 @@ class KycService
         $kyc->setSignatureUploadedAt(new \DateTime());
     }
 
-    /**
-     * Approuve un dossier KYC et active le compte utilisateur.
-     */
     public function approveKyc(Kyc $kyc, ?string $commentaire = null): void
     {
         $kyc->setStatut(Kyc::STATUT_APPROUVE);
@@ -99,9 +107,6 @@ class KycService
         $this->em->flush();
     }
 
-    /**
-     * Refuse un dossier KYC avec un commentaire obligatoire.
-     */
     public function refuseKyc(Kyc $kyc, string $commentaire): void
     {
         $kyc->setStatut(Kyc::STATUT_REFUSE);
@@ -113,15 +118,8 @@ class KycService
         $this->em->flush();
     }
 
-    /**
-     * Retourne le contenu d'un fichier KYC encodé en base64 pour affichage inline.
-     */
-    public function getFileBase64(KycFile $file): string
+    public function getPublicFilePath(KycFile $file): string
     {
-        $data = $file->getFileData();
-        if (is_resource($data)) {
-            $data = stream_get_contents($data);
-        }
-        return base64_encode((string) $data);
+        return $file->getFilePath();
     }
 }
