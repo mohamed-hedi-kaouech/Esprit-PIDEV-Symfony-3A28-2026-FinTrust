@@ -3,6 +3,7 @@
 namespace App\Entity\Categorie;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'item')]
@@ -14,9 +15,13 @@ class Item
     private int $idItem;
 
     #[ORM\Column(name: 'libelle', type: 'string', length: 255)]
+    #[Assert\NotBlank(message: 'Le libellé ne peut pas être vide')]
+    #[Assert\Length(min: 3, max: 255, minMessage: 'Le libellé doit contenir au moins 3 caractères', maxMessage: 'Le libellé ne peut pas dépasser 255 caractères')]
     private string $libelle;
 
     #[ORM\Column(name: 'montant', type: 'float')]
+    #[Assert\NotBlank(message: 'Le montant ne peut pas être vide')]
+    #[Assert\Positive(message: 'Le montant doit être un nombre positif')]
     private float $montant;
 
     // FIX: renamed column to avoid conflict with the association property below
