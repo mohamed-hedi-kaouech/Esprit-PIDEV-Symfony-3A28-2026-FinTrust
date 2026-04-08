@@ -20,12 +20,45 @@ class CategorieController extends AbstractController
     }
 
     #[Route('', name: 'list', methods: ['GET'])]
-    public function list(CategorieRepository $repository): Response
+    public function list(Request $request, CategorieRepository $repository): Response
     {
-        $categories = $repository->findAll();
+        $search = trim((string) $request->query->get('search', ''));
+        $status = trim((string) $request->query->get('status', 'all'));
+        $budgetRange = trim((string) $request->query->get('budget_range', 'all'));
+        $itemsRange = trim((string) $request->query->get('items_range', 'all'));
+        $sort = trim((string) $request->query->get('sort', 'nom'));
+
+        if (!in_array($status, ['all', 'ok', 'danger', 'warning'], true)) {
+            $status = 'all';
+        }
+
+        if (!in_array($budgetRange, ['all', '0-500', '500-1000', '1000+'], true)) {
+            $budgetRange = 'all';
+        }
+
+        if (!in_array($itemsRange, ['all', '0', '1-5', '6+'], true)) {
+            $itemsRange = 'all';
+        }
+
+        if (!in_array($sort, ['nom', 'budget', 'depenses', 'creation', 'usage', 'items'], true)) {
+            $sort = 'nom';
+        }
+
+        $categories = $repository->searchByFilters(
+            $search,
+            $status === 'all' ? null : $status,
+            $budgetRange === 'all' ? null : $budgetRange,
+            $itemsRange === 'all' ? null : $itemsRange,
+            $sort
+        );
 
         return $this->render('admin/categorie/list.html.twig', [
             'categories' => $categories,
+            'search' => $search,
+            'status' => $status,
+            'budget_range' => $budgetRange,
+            'items_range' => $itemsRange,
+            'sort' => $sort,
         ]);
     }
 
@@ -37,6 +70,15 @@ class CategorieController extends AbstractController
         ]);
     }
 
+    #[Route('/{idCategorie}/items', name: 'items', methods: ['GET'])]
+    public function items(Categorie $categorie): Response
+    {
+        return $this->render('admin/categorie/items.html.twig', [
+            'categorie' => $categorie,
+            'items' => $categorie->getItems(),
+        ]);
+    }
+
     #[Route('/create', name: 'create', methods: ['GET', 'POST'])]
     public function create(Request $request): Response
     {
@@ -45,11 +87,16 @@ class CategorieController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->entityManager->persist($categorie);
-            $this->entityManager->flush();
+            if ($categorie->getSeuilAlerte() >= $categorie->getBudgetPrevu()) {
+                $this->addFlash('error', 'Seuil invalide');
+            } else {
+                $this->entityManager->persist($categorie);
+                $this->entityManager->flush();
 
-            $this->addFlash('success', 'Catégorie créée avec succès!');
-            return $this->redirectToRoute('admin_categorie_list');
+                $this->addFlash('success', 'Categorie creee avec succes.');
+
+                return $this->redirectToRoute('admin_categorie_list');
+            }
         }
 
         return $this->render('admin/categorie/create.html.twig', [
@@ -64,10 +111,15 @@ class CategorieController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->entityManager->flush();
+            if ($categorie->getSeuilAlerte() >= $categorie->getBudgetPrevu()) {
+                $this->addFlash('error', 'Seuil invalide');
+            } else {
+                $this->entityManager->flush();
 
-            $this->addFlash('success', 'Catégorie modifiée avec succès!');
-            return $this->redirectToRoute('admin_categorie_list');
+                $this->addFlash('success', 'Categorie modifiee avec succes.');
+
+                return $this->redirectToRoute('admin_categorie_list');
+            }
         }
 
         return $this->render('admin/categorie/edit.html.twig', [
@@ -79,7 +131,7 @@ class CategorieController extends AbstractController
     #[Route('/stats', name: 'stats', methods: ['GET'])]
     public function stats(ItemRepository $itemRepository): Response
     {
-        $categories = $this->entityManager->getRepository(\App\Entity\Categorie\Categorie::class)->findAll();
+        $categories = $this->entityManager->getRepository(Categorie::class)->findAll();
         $stats = [];
 
         foreach ($categories as $categorie) {
@@ -108,22 +160,21 @@ class CategorieController extends AbstractController
     {
         if ($request->isMethod('POST')) {
             if ($this->isCsrfTokenValid('delete' . $categorie->getIdCategorie(), $request->request->get('_token'))) {
-                // Vérifier si la catégorie a des items associés
                 if (!$categorie->getItems()->isEmpty()) {
-                    $this->addFlash('error', 'Impossible de supprimer cette catégorie car elle contient des items. Supprimez d\'abord les items associés.');
+                    $this->addFlash('error', 'Impossible de supprimer cette categorie car elle contient des items.');
+
                     return $this->redirectToRoute('admin_categorie_list');
                 }
 
                 $this->entityManager->remove($categorie);
                 $this->entityManager->flush();
 
-                $this->addFlash('success', 'Catégorie supprimée avec succès!');
+                $this->addFlash('success', 'Categorie supprimee avec succes.');
             }
 
             return $this->redirectToRoute('admin_categorie_list');
         }
 
-        // Afficher la page de confirmation
         return $this->render('admin/categorie/delete.html.twig', [
             'categorie' => $categorie,
         ]);
