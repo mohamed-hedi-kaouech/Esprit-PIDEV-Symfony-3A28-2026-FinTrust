@@ -1,10 +1,9 @@
 <?php
 
 namespace App\Controller\Product;
-    use Symfony\Component\Security\Csrf\CsrfToken;
-use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
-use App\Repository\Product\ProductRepository;
+
 use App\Entity\Product\Product;
+use App\Repository\Product\ProductRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,35 +13,30 @@ use Symfony\Component\Routing\Attribute\Route;
 final class ProductController extends AbstractController
 {
     #[Route('/Product/List', name: 'product_list')]
-    public function product_list(Request $request, ProductRepository $repo): Response
+    public function list(Request $request, ProductRepository $repo): Response
     {
-        $search   = $request->query->get('search', '');
-        $category = $request->query->get('category', '');
-        $sort     = $request->query->get('sort', '');
-
-        $products = $repo->findFiltered($search, $category, $sort);
+        $products = $repo->findFiltered(
+            $request->query->get('search', ''),
+            $request->query->get('category', ''),
+            $request->query->get('sort', '')
+        );
 
         return $this->render('html/Product/Admin/ProductList.html.twig', [
             'products' => $products,
         ]);
     }
 
-
     #[Route('/deleteProduct/{id}', name: 'product_delete', methods: ['POST'])]
-    public function delete($id, ProductRepository $repository, EntityManagerInterface $em): Response
-    {
+    public function delete($id, ProductRepository $repository, EntityManagerInterface $em): Response{
         $product = $repository->find($id);
-
         if (!$product) {
             throw $this->createNotFoundException('Product not found');
         }
-
         $em->remove($product);
         $em->flush();
         $this->addFlash('success', 'Produit supprimé avec succès');
         return $this->redirectToRoute('product_list');
     }
-
 
     #[Route('/EditProduct', name: 'EditProduct', methods: ['GET', 'POST'])]
     public function EditProduct(
@@ -72,22 +66,7 @@ final class ProductController extends AbstractController
             $price       = $request->request->get('price');
             $description = trim($request->request->get('description'));
 
-            $errors = [];
-
-            // ✅ Validation
-            if (!$category) {
-                $errors[] = 'La catégorie est obligatoire';
-            }
-
-            if (!is_numeric($price) || $price < 0) {
-                $errors[] = 'Le prix doit être un nombre positif';
-            }
-
-            if (strlen($description) < 4 ) {
-                $errors[] = 'La description doit contenir au moins 4 caractères';
-            }
-
-            
+            $errors = $this->validateProductData($request);
             if (!empty($errors)) {
                 foreach ($errors as $err) {
                     $this->addFlash('error', $err);
@@ -114,63 +93,34 @@ final class ProductController extends AbstractController
     }
 
 
-
     #[Route('/CreateProduct', name: 'CreateProduct', methods: ['GET','POST'])]
-    public function CreateProduct(
-        Request $request,
-        EntityManagerInterface $em,
-        CsrfTokenManagerInterface $csrfTokenManager
-    ): Response {
-
+    public function create(Request $request, EntityManagerInterface $em): Response
+    {
         if ($request->isMethod('POST')) {
-            $submittedToken = $request->request->get('_token');
 
-            // ✅ CSRF check
-            if (!$csrfTokenManager->isTokenValid(new CsrfToken('CreateProduct', $submittedToken))) {
-                $this->addFlash('error', 'Requête invalide (CSRF)');
+            if (!$this->isCsrfTokenValid(
+                'create_product',
+                $request->request->get('_token')
+            )) {
+                $this->addFlash('error', 'CSRF invalide');
                 return $this->redirectToRoute('CreateProduct');
             }
 
-            // Get form data
-            $category    = $request->request->get('category');
-            $price       = $request->request->get('price');
-            $description = trim($request->request->get('description'));
-
-            $errors = [];
-
-            // ✅ Validation
-            if (!$category) {
-                $errors[] = 'La catégorie est obligatoire';
-            }
-
-            if (!is_numeric($price) || $price < 0) {
-                $errors[] = 'Le prix doit être un nombre positif';
-            }
-
-            if (strlen($description) < 4 ) {
-                $errors[] = 'La description doit contenir au moins 4 caractères';
-            }
+            $errors = $this->validateProductData($request);
 
             if (!empty($errors)) {
                 foreach ($errors as $err) {
                     $this->addFlash('error', $err);
                 }
 
-                // Return to the form if there are errors
-                return $this->render('html/Product/ProductCreate.html.twig', [
-                    'category'    => $category,
-                    'price'       => $price,
-                    'description' => $description,
-                    'csrf_token'  => $csrfTokenManager->getToken('CreateProduct')->getValue()
+                return $this->render('html/Product/Admin/ProductCreate.html.twig', [
+                    'old' => $request->request->all()
                 ]);
             }
 
-            // ✅ Create and persist the product
             $product = new Product();
-            $product->setCategory($category);
-            $product->setPrice((float)$price);
-            $product->setDescription($description);
-            $product->setCreatedAt(new \DateTime()); // camelCase
+            $this->hydrateProduct($product, $request);
+            $product->setCreatedAt(new \DateTime());
 
             $em->persist($product);
             $em->flush();
@@ -179,11 +129,39 @@ final class ProductController extends AbstractController
             return $this->redirectToRoute('product_list');
         }
 
-        // GET request: render empty form
-        return $this->render('html/Product/Admin/ProductCreate.html.twig', [
-            'csrf_token' => $csrfTokenManager->getToken('CreateProduct')->getValue()
-        ]);
+        return $this->render('html/Product/Admin/ProductCreate.html.twig');
     }
-    
+
+    // 🔥 Reusable validation
+    private function validateProductData(Request $request): array
+    {
+        $category = $request->request->get('category');
+        $price = $request->request->get('price');
+        $description = trim($request->request->get('description'));
+
+        $errors = [];
+
+        if (!$category) {
+            $errors[] = 'La catégorie est obligatoire';
+        }
+
+        if (!is_numeric($price) || $price < 0) {
+            $errors[] = 'Le prix doit être un nombre positif';
+        }
+
+        if (strlen($description) < 4) {
+            $errors[] = 'La description doit contenir au moins 4 caractères';
+        }
+
+        return $errors;
+    }
+
+    // 🔥 Reusable hydration
+    private function hydrateProduct(Product $product, Request $request): void
+    {
+        $product->setCategory($request->request->get('category'));
+        $product->setPrice((float)$request->request->get('price'));
+        $product->setDescription(trim($request->request->get('description')));
+    }
 }
 

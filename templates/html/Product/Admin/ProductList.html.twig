@@ -40,7 +40,15 @@
         <span class="filter-label">Filtrer par catégorie :</span>
         <select name="category" class="filter-select" onchange="this.form.submit()">
           <option value="">Toutes les catégories</option>
-          {% set categories = products|map(p => p.category)|sort %}
+          {% set categories = [] %}
+
+          {% for product in products %}
+            {% if product.category not in categories %}
+              {% set categories = categories|merge([product.category]) %}
+            {% endif %}
+          {% endfor %}
+
+          {% set categories = categories|sort %}
           {% for cat in categories %}
             <option value="{{ cat }}" {% if app.request.query.get('category') == cat %}selected{% endif %}>
               {{ cat|replace({'_': ' '})|title }}

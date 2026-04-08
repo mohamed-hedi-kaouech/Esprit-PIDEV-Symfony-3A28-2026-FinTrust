@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des Abonnements</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/Product/StyleListSubscription.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        .action-group-vertical {
+            display: flex;
+            flex-direction: column; /* stack vertically */
+            gap: 6px; /* space between buttons */
+            align-items: flex-start; /* align left, optional */
+        }
+
+        .action-group-vertical form {
+            margin: 0;
+        }
+
+        .btn-edit,
+        .btn-delete {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s ease;
+            width: 100%; /* optional: make buttons same width */
+        }
+
+        /* Edit button */
+        .btn-edit {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+    {# ── TOP BAR ── #}
+    <header class="topbar">
+        <a href="#" class="btn-back">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+            Retour
+        </a>
+
+        <h1 class="topbar-title">Liste des abonnements</h1>
+
+        <div class="stat-pills">
+            <div class="stat-pill stat-pill--total">
+                <span class="stat-dot"></span>
+                <strong>{{ totalSubscriptions }}</strong>&nbsp;Total
+            </div>
+            <div class="stat-pill stat-pill--active">
+                <span class="stat-dot"></span>
+                <strong>{{ activeSubscriptions }}</strong>&nbsp;Actifs
+            </div>
+            <div class="stat-pill stat-pill--draft">
+                <span class="stat-dot"></span>
+                <strong>{{ draftSubscriptions }}</strong>&nbsp;Brouillon
+            </div>
+            <div class="stat-pill stat-pill--warning">
+                <span class="stat-dot"></span>
+                <strong>{{ expiringSoon }}</strong>&nbsp;Expire &lt;30j
+            </div>
+        </div>
+    </header>
+
+    {# ── FILTER BAR ── #}
+    <form method="GET" action="{{ path('subscription_list') }}" class="filterbar">
+
+        <label for="f-type" class="filter-label">Type</label>
+        <select id="f-type" name="type" class="filter-select" onchange="this.form.submit()">
+            <option value=""            {{ typeFilter == ''            ? 'selected' : '' }}>Tous</option>
+            <option value="MONTHLY"     {{ typeFilter == 'MONTHLY'     ? 'selected' : '' }}>Mensuel</option>
+            <option value="ANNUAL"      {{ typeFilter == 'ANNUAL'      ? 'selected' : '' }}>Annuel</option>
+            <option value="TRANSACTION" {{ typeFilter == 'TRANSACTION' ? 'selected' : '' }}>Transaction</option>
+            <option value="ONE_TIME"    {{ typeFilter == 'ONE_TIME'    ? 'selected' : '' }}>Unique</option>
+        </select>
+
+        <label for="f-status" class="filter-label">Statut</label>
+        <select id="f-status" name="status" class="filter-select" onchange="this.form.submit()">
+            <option value=""          {{ statusFilter == ''          ? 'selected' : '' }}>Tous</option>
+            <option value="ACTIVE"    {{ statusFilter == 'ACTIVE'    ? 'selected' : '' }}>Actif</option>
+            <option value="DRAFT"     {{ statusFilter == 'DRAFT'     ? 'selected' : '' }}>Brouillon</option>
+            <option value="SUSPENDED" {{ statusFilter == 'SUSPENDED' ? 'selected' : '' }}>Suspendu</option>
+            <option value="CLOSED"    {{ statusFilter == 'CLOSED'    ? 'selected' : '' }}>Fermé</option>
+        </select>
+
+        <input
+            id="f-search"
+            type="text"
+            name="search"
+            value="{{ search }}"
+            placeholder="Rechercher un client, produit..."
+            class="filter-search"
+            oninput="this.form.submit()"
+        >
+
+        <a href="{{ path('subscription_list') }}" class="btn-reset">Réinitialiser</a>
+    </form>
+
+    {# ── MAIN CONTENT ── #}
+    <main class="content">
+
+        <div class="list-meta">
+            <span class="list-meta-title">Abonnements produits</span>
+            <span class="list-meta-count">
+                {{ subscriptions|length }}&nbsp;abonnement{{ subscriptions|length != 1 ? 's' : '' }}
+            </span>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Produit</th>
+                        <th>Type</th>
+                        <th>Souscription</th>
+                        <th>Expiration</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subscription in subscriptions %}
+                        <tr>
+                            <td class="td-muted">{{ subscription.productCategory }}</td>
+
+                            <td>
+                                <span class="type-tag type-tag--{{ subscription.type|lower }}">
+                                    {{ subscription.type }}
+                                </span>
+                            </td>
+
+                            <td class="td-date">{{ subscription.subscriptionDate|date('d/m/Y') }}</td>
+
+                            <td class="td-date{% if subscription.daysUntilExpiration is defined and subscription.daysUntilExpiration <= 30 and subscription.status == 'ACTIVE' %} td-expiring{% endif %}">
+                                {{ subscription.expirationDate|date('d/m/Y') }}
+                                {% if subscription.daysUntilExpiration is defined and subscription.daysUntilExpiration <= 30 and subscription.status == 'ACTIVE' %}
+                                    <span class="exp-flag" title="Expire dans {{ subscription.daysUntilExpiration }} jours">!</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <span class="status-badge status-badge--{{ subscription.status|lower }}">
+                                    {% if   subscription.status == 'ACTIVE'    %}Actif
+                                    {% elseif subscription.status == 'DRAFT'     %}Brouillon
+                                    {% elseif subscription.status == 'SUSPENDED' %}Suspendu
+                                    {% elseif subscription.status == 'CLOSED'    %}Fermé
+                                    {% else %}{{ subscription.status }}{% endif %}
+                                </span>
+                            </td>
+                            <td class="td-action">
+                                <div class="action-group">
+                                    <a href="{{ path('Client_subscriptiondelete', {id: subscription.subscriptionId}) }}" class="btn-edit">
+                                        Annuler
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="td-empty">
+                                Aucun abonnement trouvé.
+                                <a href="{{ path('Client_subscription_list') }}" class="empty-link">Réinitialiser les filtres</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# ── FOOTER STATS ── #}
+        <div class="footer-bar">
+            <div class="footer-stat">
+                <span class="footer-label">Total</span>
+                <span class="footer-value">{{ totalSubscriptions }}</span>
+            </div>
+            <div class="footer-stat">
+                <span class="footer-label">Actifs</span>
+                <span class="footer-value footer-value--success">{{ activeSubscriptions }}</span>
+            </div>
+            <div class="footer-stat">
+                <span class="footer-label">Suspendus</span>
+                <span class="footer-value footer-value--warning">{{ suspendedSubscriptions }}</span>
+            </div>
+            <div class="footer-stat">
+                <span class="footer-label">Fermés</span>
+                <span class="footer-value footer-value--danger">{{ closedSubscriptions }}</span>
+            </div>
+        </div>
+
+    </main>
+    {# Flash messages #}
+    {% for msg in app.flashes('success') %}
+        <script>
+            Swal.fire({
+                icon: 'success',
+                title: '{{ msg }}',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        </script>
+    {% endfor %}
+</body>
+</html>
