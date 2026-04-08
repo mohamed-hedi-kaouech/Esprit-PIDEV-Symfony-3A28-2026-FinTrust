@@ -12,9 +12,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Choice;
-use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\Length;
-use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Regex;
 
 class AdminUserEditFormType extends AbstractType
@@ -25,39 +23,18 @@ class AdminUserEditFormType extends AbstractType
             ->add('nom', TextType::class, [
                 'label' => 'Nom',
                 'required' => false,
-                'constraints' => [
-                    new NotBlank(['message' => 'Le nom est obligatoire.']),
-                    new Length([
-                        'max' => 50,
-                        'maxMessage' => 'Le nom ne peut pas depasser {{ limit }} caracteres.',
-                    ]),
-                ],
             ])
             ->add('prenom', TextType::class, [
                 'label' => 'Prenom',
                 'required' => false,
-                'constraints' => [
-                    new NotBlank(['message' => 'Le prenom est obligatoire.']),
-                    new Length(['max' => 50]),
-                ],
             ])
             ->add('email', EmailType::class, [
                 'label' => 'Adresse e-mail',
                 'required' => false,
-                'constraints' => [
-                    new NotBlank(['message' => "L'email est obligatoire."]),
-                    new Email(['message' => "L'adresse e-mail n'est pas valide."]),
-                ],
             ])
             ->add('numTel', TelType::class, [
                 'label' => 'Telephone',
                 'required' => false,
-                'constraints' => [
-                    new Regex([
-                        'pattern' => '/^\+?[0-9\s\-]{8,20}$/',
-                        'message' => 'Le numero de telephone est invalide.',
-                    ]),
-                ],
                 'attr' => [
                     'placeholder' => '+216 12 345 678',
                 ],
