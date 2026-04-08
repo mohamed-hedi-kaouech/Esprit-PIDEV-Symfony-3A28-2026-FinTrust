@@ -3,6 +3,7 @@
 namespace App\Security;
 
 use App\Entity\User\User;
+use App\EventSubscriber\AuthSessionVersionSubscriber;
 use App\Repository\UserRepository;
 use App\Service\CaptchaService;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -85,6 +86,7 @@ class AppAuthenticator extends AbstractLoginFormAuthenticator
     {
         /** @var User $user */
         $user = $token->getUser();
+        $request->getSession()->set(AuthSessionVersionSubscriber::SESSION_KEY, $user->getAuthSessionVersion());
         $this->captchaService->resetLoginFailures($request->getSession());
         $this->captchaService->clearChallenge($request->getSession(), 'login');
 

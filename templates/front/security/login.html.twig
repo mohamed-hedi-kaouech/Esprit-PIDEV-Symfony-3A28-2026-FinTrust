@@ -28,6 +28,13 @@
             </div>
           {% endif %}
 
+          {% if app.request.query.get('reset') %}
+            <div class="alert alert-info d-flex align-items-center" role="alert">
+              <i class="bi bi-shield-lock-fill me-2"></i>
+              <span>Votre mot de passe a ete mis a jour. Veuillez vous reconnecter.</span>
+            </div>
+          {% endif %}
+
           <form method="post" action="{{ path('app_login') }}" id="loginForm" novalidate="novalidate">
             <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}"/>
 
@@ -51,6 +58,9 @@
                 <label for="password" class="form-label fw-semibold">
                   <i class="bi bi-lock me-1 text-primary"></i>Mot de passe
                 </label>
+                <a href="{{ path('app_forgot_password') }}" class="small fw-semibold text-decoration-none">
+                  Mot de passe oublie ?
+                </a>
               </div>
               <div class="input-group">
                 <input
