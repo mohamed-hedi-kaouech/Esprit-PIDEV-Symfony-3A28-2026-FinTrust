@@ -1,4 +1,7 @@
-<!DOCTYPE html>
+{% extends 'admin/back.html.twig' %}
+{% block title %}Create Produit{% endblock %}
+
+{% block admin_content %}
 
 <html lang="fr">
 <head>
@@ -96,7 +99,6 @@
             <label class="field-label">Date de Création</label>
             <input type="date" class="form-input" id="creationDate" disabled>
         </div>
-        </div>
 
         <hr class="form-divider">
 
@@ -127,3 +129,4 @@
 
 </body>
 </html>
+{% endblock %}

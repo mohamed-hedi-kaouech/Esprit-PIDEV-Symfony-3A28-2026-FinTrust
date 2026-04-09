@@ -1,4 +1,7 @@
-<!DOCTYPE html>
+{% extends 'admin/back.html.twig' %}
+{% block title %}Dashboard Produits & Subscriptions{% endblock %}
+
+{% block admin_content %}
 <html lang="fr">
 <head>
     <meta charset="UTF-8"/>
@@ -144,3 +147,4 @@
 <script src="{{ asset('js/Product/Dashboard.js') }}" defer></script>
 </body>
 </html>
+{% endblock %}
