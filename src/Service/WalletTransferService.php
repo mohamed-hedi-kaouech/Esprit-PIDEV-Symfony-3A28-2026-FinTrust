@@ -16,7 +16,6 @@ class WalletTransferService
         private readonly EntityManagerInterface $entityManager,
         private readonly Connection $connection,
         private readonly NotificationService $notificationService,
-        private readonly WalletTransferMailer $walletTransferMailer,
         private readonly WalletAuditService $walletAuditService,
     ) {
     }
