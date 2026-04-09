@@ -91,3 +91,17 @@ cb2b25,127.0.0.1,GET,http://127.0.0.1:8000/images/fintech-logo.png,1775746844,28
 28b3d8,127.0.0.1,GET,http://127.0.0.1:8000/images/fintech-logo.png,1775746844,,404,request
 46a810,127.0.0.1,GET,http://127.0.0.1:8000/loan/2/details,1775746953,,200,request
 f431e9,127.0.0.1,GET,http://127.0.0.1:8000/loan/1/details,1775746956,,200,request
+5220af,127.0.0.1,GET,http://127.0.0.1:8000/loan/admin/dashboard,1775759833,,200,request
+e37cc7,127.0.0.1,GET,http://127.0.0.1:8000/loan/admin/loan/2/review,1775759839,2a58e8,500,request
+2a58e8,127.0.0.1,GET,http://127.0.0.1:8000/loan/admin/loan/2/review,1775759839,,500,request
+4db6b0,127.0.0.1,GET,http://127.0.0.1:8000/loan/admin/loan/2/review,1775761040,,200,request
+df1d78,127.0.0.1,GET,http://127.0.0.1:8000/loan/admin/dashboard,1775761088,,200,request
+c3ee08,127.0.0.1,GET,http://127.0.0.1:8000/loan/admin/dashboard,1775761089,,200,request
+52a2b3,127.0.0.1,GET,http://127.0.0.1:8000/loan/admin/loan/2/repayments,1775761093,,200,request
+2c3d21,127.0.0.1,GET,http://127.0.0.1:8000/loan/admin/loan/2/review,1775761097,,200,request
+ba4341,127.0.0.1,GET,http://127.0.0.1:8000/loan/admin/loan/2/repayments,1775761124,,200,request
+7a0371,127.0.0.1,GET,http://127.0.0.1:8000/loan/admin/dashboard,1775761134,,200,request
+17ebd3,127.0.0.1,GET,http://127.0.0.1:8000/loan/admin/loan/2/review,1775761149,,200,request
+977a93,127.0.0.1,GET,http://127.0.0.1:8000/loan/admin/loan/2/review,1775761183,,200,request
+fbbba2,127.0.0.1,GET,http://127.0.0.1:8000/loan/admin/loan/2/review,1775761197,,200,request
+7433e4,127.0.0.1,GET,http://127.0.0.1:8000/loan/admin/dashboard,1775761201,,200,request

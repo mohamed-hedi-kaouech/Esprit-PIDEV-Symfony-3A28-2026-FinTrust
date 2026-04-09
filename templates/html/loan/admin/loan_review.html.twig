@@ -29,7 +29,7 @@
                 Dashboard
             </a>
             <span class="text-slate-400">/</span>
-            <span class="text-slate-800 font-semibold">{{ isPending ? 'Review' : 'View' }} Loan #{{ loan.loanId }}</span>
+            <span class="text-slate-800 font-semibold">{{ isPending ? 'Review' : 'View' }} Loan Num{{ loan.loanId }}</span>
         </div>
 
         {# Status Banner #}
@@ -46,7 +46,7 @@
             <div class="flex justify-between items-start">
                 <div>
                     <div class="flex items-center gap-3 mb-2">
-                        <h1 class="text-3xl font-bold text-slate-800">Loan #{{ loan.loanId }}</h1>
+                        <h1 class="text-3xl font-bold text-slate-800">Loan Num{{ loan.loanId }}</h1>
                         <span class="px-3 py-1 bg-{{ config.color }}-100 text-{{ config.color }}-800 rounded-full text-sm font-bold uppercase tracking-wide">
                             {{ loan.status }}
                         </span>
