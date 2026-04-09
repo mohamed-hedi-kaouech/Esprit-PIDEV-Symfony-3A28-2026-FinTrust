@@ -4,7 +4,7 @@ namespace App\Controller\Front;
 
 use App\Entity\User\User;
 use App\Form\Front\RegistrationFormType;
-use App\Security\AppAuthenticator;
+use App\Service\AccountVerificationMailer;
 use App\Service\CaptchaService;
 use App\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -13,7 +13,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
-use Symfony\Component\Security\Http\Authentication\UserAuthenticatorInterface;
 
 class SecurityController extends AbstractController
 {
@@ -21,8 +20,7 @@ class SecurityController extends AbstractController
     public function register(
         Request $request,
         UserService $userService,
-        UserAuthenticatorInterface $userAuthenticator,
-        AppAuthenticator $appAuthenticator,
+        AccountVerificationMailer $accountVerificationMailer,
     ): Response {
         if ($redirect = $this->redirectAuthenticatedUser()) {
             return $redirect;
@@ -33,12 +31,18 @@ class SecurityController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $plainPassword = $form->get('plainPassword')->getData();
+            $plainPassword = (string) $form->get('plainPassword')->getData();
             $userService->registerClient($user, $plainPassword);
+            try {
+                $accountVerificationMailer->sendVerificationCode($user);
+                $this->addFlash('success', 'Compte cree avec succes. Un code de verification a ete envoye a votre adresse e-mail.');
+            } catch (\Throwable) {
+                $this->addFlash('warning', 'Compte cree avec succes. L envoi de l e-mail a echoue pour le moment, mais vous pouvez demander un nouveau code.');
+            }
 
-            $this->addFlash('success', 'Compte créé avec succès. Déposez maintenant vos documents KYC pour lancer la validation.');
-
-            return $userAuthenticator->authenticateUser($user, $appAuthenticator, $request);
+            return $this->redirectToRoute('app_verify_account', [
+                'email' => $user->getEmail(),
+            ]);
         }
 
         return $this->render('front/security/register.html.twig', [
@@ -69,7 +73,7 @@ class SecurityController extends AbstractController
     #[Route('/logout', name: 'app_logout', methods: ['GET'])]
     public function logout(): never
     {
-        throw new \LogicException('Intercepté par le firewall Symfony.');
+        throw new \LogicException('Intercepte par le firewall Symfony.');
     }
 
     private function redirectAuthenticatedUser(): ?RedirectResponse

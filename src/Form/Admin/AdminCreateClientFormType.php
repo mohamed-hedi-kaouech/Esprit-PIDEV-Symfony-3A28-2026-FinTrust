@@ -12,7 +12,6 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Choice;
-use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Regex;
@@ -24,44 +23,27 @@ class AdminCreateClientFormType extends AbstractType
         $builder
             ->add('nom', TextType::class, [
                 'label' => 'Nom',
-                'constraints' => [
-                    new NotBlank(['message' => 'Le nom est obligatoire.']),
-                    new Length(['max' => 50]),
-                ],
-                'attr' => ['maxlength' => 50],
+                'required' => false,
             ])
             ->add('prenom', TextType::class, [
                 'label' => 'Prenom',
-                'constraints' => [
-                    new NotBlank(['message' => 'Le prenom est obligatoire.']),
-                    new Length(['max' => 50]),
-                ],
-                'attr' => ['maxlength' => 50],
+                'required' => false,
             ])
             ->add('email', EmailType::class, [
                 'label' => 'Adresse e-mail',
-                'constraints' => [
-                    new NotBlank(['message' => "L'adresse e-mail est obligatoire."]),
-                    new Email(['message' => "L'adresse e-mail n'est pas valide."]),
-                ],
+                'required' => false,
             ])
             ->add('numTel', TelType::class, [
                 'label' => 'Telephone',
                 'required' => false,
-                'constraints' => [
-                    new Regex([
-                        'pattern' => '/^\+?[0-9\s\-]{8,20}$/',
-                        'message' => 'Le numero de telephone est invalide.',
-                    ]),
-                ],
                 'attr' => [
-                    'pattern' => '^\+?[0-9\s\-]{8,20}$',
                     'placeholder' => '+216 12 345 678',
                 ],
             ])
             ->add('plainPassword', PasswordType::class, [
                 'label' => 'Mot de passe provisoire',
                 'mapped' => false,
+                'required' => false,
                 'constraints' => [
                     new NotBlank(['message' => 'Le mot de passe est obligatoire.']),
                     new Length([
@@ -81,6 +63,7 @@ class AdminCreateClientFormType extends AbstractType
             ])
             ->add('status', ChoiceType::class, [
                 'label' => 'Statut du compte',
+                'required' => false,
                 'choices' => [
                     'Actif' => User::STATUS_ACTIF,
                     'En attente' => User::STATUS_EN_ATTENTE,

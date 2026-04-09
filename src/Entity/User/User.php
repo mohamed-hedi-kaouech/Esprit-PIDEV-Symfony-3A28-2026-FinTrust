@@ -101,6 +101,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', length: 20)]
     private string $status = self::STATUS_EN_ATTENTE;
 
+    #[ORM\Column(name: 'is_verified', type: 'boolean', options: ['default' => true])]
+    private bool $isVerified = true;
+
+    #[ORM\Column(name: 'email_verification_code', type: 'string', length: 6, nullable: true)]
+    private ?string $emailVerificationCode = null;
+
+    #[ORM\Column(name: 'email_verification_expires_at', type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $emailVerificationExpiresAt = null;
+
+    #[ORM\Column(name: 'email_verified_at', type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $emailVerifiedAt = null;
+
+    #[ORM\Column(name: 'password_changed_at', type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $passwordChangedAt = null;
+
+    #[ORM\Column(name: 'auth_session_version', type: 'integer', options: ['default' => 1])]
+    private int $authSessionVersion = 1;
+
     /** Token unique pour le QR code client */
     #[ORM\Column(name: 'qr_token', type: 'string', length: 64, nullable: true, unique: true)]
     private ?string $qrToken = null;
@@ -179,6 +197,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->role === self::ROLE_ADMIN;
     }
 
+    public function isVerified(): bool
+    {
+        return $this->isVerified;
+    }
+
+    public function isEmailVerificationExpired(): bool
+    {
+        return $this->emailVerificationExpiresAt === null || $this->emailVerificationExpiresAt < new \DateTimeImmutable();
+    }
+
     public function getFullName(): string
     {
         return $this->prenom . ' ' . $this->nom;
@@ -197,6 +225,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function isCriticalRisk(): bool
     {
         return $this->riskLevel === self::RISK_CRITICAL;
+    }
+
+    public function rotateAuthSessionVersion(): static
+    {
+        $this->authSessionVersion++;
+
+        return $this;
     }
 
     public function getEngagementBadge(): string
@@ -275,6 +310,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getStatus(): string { return $this->status; }
     public function setStatus(string $v): static { $this->status = $v; return $this; }
+
+    public function setIsVerified(bool $v): static { $this->isVerified = $v; return $this; }
+
+    public function getEmailVerificationCode(): ?string { return $this->emailVerificationCode; }
+    public function setEmailVerificationCode(?string $v): static { $this->emailVerificationCode = $v; return $this; }
+
+    public function getEmailVerificationExpiresAt(): ?\DateTimeInterface { return $this->emailVerificationExpiresAt; }
+    public function setEmailVerificationExpiresAt(?\DateTimeInterface $v): static { $this->emailVerificationExpiresAt = $v; return $this; }
+
+    public function getEmailVerifiedAt(): ?\DateTimeInterface { return $this->emailVerifiedAt; }
+    public function setEmailVerifiedAt(?\DateTimeInterface $v): static { $this->emailVerifiedAt = $v; return $this; }
+
+    public function getPasswordChangedAt(): ?\DateTimeInterface { return $this->passwordChangedAt; }
+    public function setPasswordChangedAt(?\DateTimeInterface $v): static { $this->passwordChangedAt = $v; return $this; }
+
+    public function getAuthSessionVersion(): int { return $this->authSessionVersion; }
+    public function setAuthSessionVersion(int $v): static { $this->authSessionVersion = $v; return $this; }
 
     public function getQrToken(): ?string { return $this->qrToken; }
     public function setQrToken(?string $v): static { $this->qrToken = $v; return $this; }

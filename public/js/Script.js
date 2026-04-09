@@ -285,29 +285,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btn.addEventListener('click', () => {
       const inputs = modal.querySelectorAll('.form-input');
-      let valid = true;
-
-      inputs.forEach(input => {
-        input.style.borderColor = '';
-        if (!input.value.trim()) {
-          input.style.borderColor = '#ef4444';
-          valid = false;
-        }
-      });
-
-      // Email validation
-      const emailInput = modal.querySelector('input[type="email"]');
-      if (emailInput && emailInput.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value)) {
-        emailInput.style.borderColor = '#ef4444';
-        valid = false;
-        showToast('Please enter a valid email address.', 'error');
-        return;
-      }
-
-      if (!valid) {
-        showToast('Please fill in all required fields.', 'error');
-        return;
-      }
 
       // Simulate loading state
       const originalText = btn.textContent;
@@ -321,7 +298,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.style.opacity = '';
         closeAllModals();
         showToast(successMsg, 'success');
-        // Reset form
         inputs.forEach(input => input.value = '');
       }, 1400);
     });

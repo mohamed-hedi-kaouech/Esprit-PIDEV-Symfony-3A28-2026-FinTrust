@@ -95,15 +95,14 @@
         <i class="bi bi-x-circle me-2"></i>Refuser le dossier
       </div>
       <div class="ft-admin-card-body">
-        <form method="post" action="{{ path('admin_kyc_refuse', {id: kyc.id}) }}">
+        <form method="post" action="{{ path('admin_kyc_refuse', {id: kyc.id}) }}" novalidate="novalidate">
           <input type="hidden" name="_token" value="{{ csrf_token('kyc_refuse_' ~ kyc.id) }}"/>
           <div class="mb-3">
             <label class="form-label small fw-semibold">
               Motif de refus <span class="text-danger">*</span>
             </label>
             <textarea name="commentaire" class="form-control ft-input" rows="3"
-                      placeholder="Documents illisibles, CIN expiré, photo non conforme…"
-                      required minlength="10"></textarea>
+                      placeholder="Documents illisibles, CIN expiré, photo non conforme…"></textarea>
             <div class="form-text text-danger">Le motif est obligatoire et sera communiqué au client.</div>
           </div>
           <button type="submit" class="btn btn-danger w-100 fw-semibold">
@@ -137,15 +136,16 @@
             <div class="text-muted" style="font-size:.75rem">{{ (item.file.fileSize / 1024)|round(1) }} Ko</div>
 
             {% if item.file.fileType starts with 'image/' %}
-              <img src="data:{{ item.file.fileType }};base64,{{ item.base64 }}"
+              <img src="{{ asset(item.path) }}"
                    alt="{{ item.file.fileName }}"
                    class="img-fluid rounded mt-2 border"
                    style="max-height:160px; object-fit:cover; width:100%"/>
             {% else %}
-              <a href="data:application/pdf;base64,{{ item.base64 }}"
-                 download="{{ item.file.fileName }}"
+              <a href="{{ asset(item.path) }}"
+                 target="_blank"
+                 rel="noopener"
                  class="btn btn-sm ft-btn-outline-primary mt-2 w-100">
-                <i class="bi bi-download me-1"></i>Télécharger le PDF
+                <i class="bi bi-download me-1"></i>Ouvrir le PDF
               </a>
             {% endif %}
           </div>

@@ -403,7 +403,7 @@
         </div>
       </div>
       <div class="ft-admin-card-body">
-        <form method="post" action="{{ path('admin_user_notify_client') }}" id="adminNotifyForm">
+        <form method="post" action="{{ path('admin_user_notify_client') }}" id="adminNotifyForm" novalidate="novalidate">
           <input type="hidden" name="_token" value="{{ csrf_token('notify_client') }}">
           <input type="hidden" name="type" id="adminNotifyType" value="INFO">
 
@@ -429,7 +429,7 @@
 
           <div class="mb-3">
             <label class="form-label fw-semibold small">Client cible</label>
-            <select name="user_id" class="form-select ft-input ft-admin-notify-input" required>
+            <select name="user_id" class="form-select ft-input ft-admin-notify-input">
               <option value="">Choisir un client</option>
               {% for client in clients %}
                 <option value="{{ client.id }}">{{ client.fullName }} · {{ client.email }}</option>
@@ -464,7 +464,7 @@
               <span>Message</span>
               <span class="ft-admin-char-counter"><span id="adminNotifyCount">0</span>/500</span>
             </label>
-            <textarea name="message" class="form-control ft-input" rows="5" minlength="5" maxlength="500" placeholder="Ex: Votre dossier a été relancé, merci de compléter votre profil." required></textarea>
+            <textarea name="message" class="form-control ft-input" rows="5" placeholder="Ex: Votre dossier a été relancé, merci de compléter votre profil."></textarea>
           </div>
 
           <div class="ft-admin-template-row mt-3">

@@ -29,24 +29,25 @@ class RegistrationFormType extends AbstractType
             // Nom de famille
             ->add('nom', TextType::class, [
                 'label' => 'Nom',
+                'required' => false,
                 'attr'  => [
                     'placeholder'  => 'Votre nom de famille',
                     'autocomplete' => 'family-name',
-                    'maxlength'    => 50,
                 ],
             ])
             // Prénom
             ->add('prenom', TextType::class, [
                 'label' => 'Prénom',
+                'required' => false,
                 'attr'  => [
                     'placeholder'  => 'Votre prénom',
                     'autocomplete' => 'given-name',
-                    'maxlength'    => 50,
                 ],
             ])
             // Email unique
             ->add('email', EmailType::class, [
                 'label' => 'Adresse e-mail',
+                'required' => false,
                 'attr'  => [
                     'placeholder'  => 'exemple@fintrust.tn',
                     'autocomplete' => 'email',
@@ -64,8 +65,10 @@ class RegistrationFormType extends AbstractType
             ->add('plainPassword', RepeatedType::class, [
                 'type'   => PasswordType::class,
                 'mapped' => false,
+                'required' => false,
                 'first_options' => [
                     'label' => 'Mot de passe',
+                    'required' => false,
                     'attr'  => [
                         'autocomplete' => 'new-password',
                         'placeholder'  => 'Minimum 8 caractères',
@@ -73,6 +76,7 @@ class RegistrationFormType extends AbstractType
                 ],
                 'second_options' => [
                     'label' => 'Confirmer le mot de passe',
+                    'required' => false,
                     'attr'  => [
                         'autocomplete' => 'new-password',
                         'placeholder'  => 'Répétez votre mot de passe',

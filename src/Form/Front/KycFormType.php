@@ -11,6 +11,9 @@ use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\All;
+use Symfony\Component\Validator\Constraints\Count;
+use Symfony\Component\Validator\Constraints\File;
 
 /**
  * FormType Front — Dépôt du dossier KYC.
@@ -29,15 +32,15 @@ class KycFormType extends AbstractType
             // Numéro CIN
             ->add('cin', TextType::class, [
                 'label' => 'Numéro CIN',
+                'required' => false,
                 'attr'  => [
                     'placeholder' => 'Ex : 12345678',
-                    'maxlength'   => 8,
-                    'inputmode'   => 'numeric',
                 ],
             ])
             // Adresse complète
             ->add('adresse', TextareaType::class, [
                 'label' => 'Adresse complète',
+                'required' => false,
                 'attr'  => [
                     'rows'        => 3,
                     'placeholder' => 'Numéro, Rue, Ville, Code postal',
@@ -46,8 +49,8 @@ class KycFormType extends AbstractType
             // Date de naissance (widget HTML5 date)
             ->add('dateNaissance', DateType::class, [
                 'label'  => 'Date de naissance',
+                'required' => false,
                 'widget' => 'single_text',
-                'attr'   => ['max' => (new \DateTime('-18 years'))->format('Y-m-d')],
             ])
             // Fichiers justificatifs (multiple, non mappé)
             ->add('documents', FileType::class, [
@@ -55,9 +58,21 @@ class KycFormType extends AbstractType
                 'mapped'   => false,
                 'multiple' => true,
                 'required' => false,
-                'attr'     => [
-                    'accept'   => '.jpg,.jpeg,.png,.pdf',
-                    'multiple' => 'multiple',
+                'constraints' => [
+                    new Count([
+                        'min' => 1,
+                        'minMessage' => 'Veuillez joindre au moins un document justificatif.',
+                    ]),
+                    new All([
+                        'constraints' => [
+                            new File([
+                                'maxSize' => '5M',
+                                'maxSizeMessage' => 'Chaque justificatif doit faire 5 Mo maximum.',
+                                'mimeTypes' => ['image/jpeg', 'image/png', 'application/pdf'],
+                                'mimeTypesMessage' => 'Chaque justificatif doit etre en JPG, PNG ou PDF.',
+                            ]),
+                        ],
+                    ]),
                 ],
                 'help' => 'Formats acceptés : JPG, PNG, PDF — 5 Mo max par fichier.',
             ])
