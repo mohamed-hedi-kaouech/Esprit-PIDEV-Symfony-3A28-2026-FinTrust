@@ -13,23 +13,58 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: 'publication')]
 class Publication
 {
+    public const CATEGORY_FINANCE = 'FINANCE';
+    public const CATEGORY_ASSURANCE = 'ASSURANCE';
+    public const CATEGORY_TECH = 'TECH';
+    public const CATEGORY_FINTECH = 'FINTECH';
+    public const CATEGORY_EPARGNE = 'EPARGNE';
+    public const CATEGORY_INVESTISSEMENT = 'INVESTISSEMENT';
+    public const CATEGORY_CREDIT = 'CREDIT';
+    public const CATEGORY_CYBERSECURITE = 'CYBERSECURITE';
+    public const CATEGORY_CONFORMITE = 'CONFORMITE';
+    public const CATEGORY_REGLEMENTATION = 'REGLEMENTATION';
+
+    public const STATUS_BROUILLON = 'BROUILLON';
+    public const STATUS_PUBLIE = 'PUBLIE';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(name: 'id_publication')]
     private ?int $id = null;
 
     #[ORM\Column(name: 'titre', type: Types::STRING, length: 255)]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: 'Le titre est obligatoire.')]
     private ?string $titre = null;
 
     #[ORM\Column(name: 'contenu', type: Types::TEXT)]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: 'Le contenu est obligatoire.')]
     private ?string $contenu = null;
 
     #[ORM\Column(name: 'categorie', type: Types::STRING, length: 100, nullable: true)]
+    #[Assert\NotBlank(message: 'La categorie est obligatoire.')]
+    #[Assert\Choice(
+        choices: [
+            self::CATEGORY_FINANCE,
+            self::CATEGORY_ASSURANCE,
+            self::CATEGORY_TECH,
+            self::CATEGORY_FINTECH,
+            self::CATEGORY_EPARGNE,
+            self::CATEGORY_INVESTISSEMENT,
+            self::CATEGORY_CREDIT,
+            self::CATEGORY_CYBERSECURITE,
+            self::CATEGORY_CONFORMITE,
+            self::CATEGORY_REGLEMENTATION,
+        ],
+        message: 'La categorie choisie est invalide.'
+    )]
     private ?string $categorie = null;
 
     #[ORM\Column(name: 'statut', type: Types::STRING, length: 50)]
+    #[Assert\NotBlank(message: 'Le statut est obligatoire.')]
+    #[Assert\Choice(
+        choices: [self::STATUS_BROUILLON, self::STATUS_PUBLIE],
+        message: 'Le statut choisi est invalide.'
+    )]
     private ?string $statut = null;
 
     #[ORM\Column(name: 'est_visible', type: Types::BOOLEAN, options: ['default' => true])]

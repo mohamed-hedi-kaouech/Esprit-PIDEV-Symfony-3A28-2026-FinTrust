@@ -85,6 +85,9 @@ class PublicationController extends AbstractController
         $feedbackStats = $this->publicationService->getFeedbackStatistics();
         $categoryStats = $this->publicationRepo->getCategoryCounts();
         $publicationTrend = $this->publicationService->getPublicationTrend(6);
+        $categoryPerformance = $this->publicationService->getCategoryPerformanceStats();
+        $feedbackInsights = $this->publicationService->getFeedbackInsightStats();
+        $weeklyPublicationStats = $this->publicationService->getWeeklyPublicationStats();
         $trendMax = max(array_map(fn(array $point) => $point['count'], $publicationTrend)) ?: 1;
 
         return $this->render('admin/publication/index.html.twig', [
@@ -100,6 +103,9 @@ class PublicationController extends AbstractController
             'feedback_stats' => $feedbackStats,
             'category_stats' => $categoryStats,
             'publication_trend' => $publicationTrend,
+            'category_performance' => $categoryPerformance,
+            'feedback_insights' => $feedbackInsights,
+            'weekly_publication_stats' => $weeklyPublicationStats,
             'trend_max' => $trendMax,
         ]);
     }
@@ -140,7 +146,7 @@ class PublicationController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->publicationService->createPublication($publication, $this->getUser());
+            $this->publicationService->createPublication($publication);
             $this->addFlash('success', 'Publication créée avec succès!');
             return $this->redirectToRoute('admin_publications_index');
         }

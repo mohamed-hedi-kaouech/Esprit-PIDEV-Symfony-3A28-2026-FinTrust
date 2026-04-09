@@ -30,7 +30,7 @@ class PublicationRepository extends ServiceEntityRepository
             ->addSelect('SUM(CASE WHEN f.typeReaction = :likeType THEN 1 ELSE 0 END) AS HIDDEN likeCount')
             ->setParameter('likeType', 'LIKE')
             ->where('p.statut = :status')
-            ->setParameter('status', 'PUBLIÉ');
+            ->setParameter('status', Publication::STATUS_PUBLIE);
 
         if ($categoryName) {
             $qb->andWhere('p.categorie = :category')
@@ -61,7 +61,7 @@ class PublicationRepository extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('p')
             ->select('COUNT(DISTINCT p.id)')
             ->where('p.statut = :status')
-            ->setParameter('status', 'PUBLIÉ');
+            ->setParameter('status', Publication::STATUS_PUBLIE);
 
         if ($categoryName) {
             $qb->andWhere('p.categorie = :category')
@@ -81,7 +81,7 @@ class PublicationRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('p')
             ->select('p.categorie, COUNT(p.id) as pub_count')
             ->where('p.statut = :status')
-            ->setParameter('status', 'PUBLIÉ')
+            ->setParameter('status', Publication::STATUS_PUBLIE)
             ->groupBy('p.categorie')
             ->orderBy('pub_count', 'DESC')
             ->setMaxResults($limit)
@@ -93,7 +93,7 @@ class PublicationRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('p')
             ->where('p.statut = :status')
-            ->setParameter('status', 'PUBLIÉ')
+            ->setParameter('status', Publication::STATUS_PUBLIE)
             ->orderBy('p.datePublication', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()

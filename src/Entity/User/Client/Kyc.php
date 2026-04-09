@@ -27,14 +27,8 @@ class Kyc
     #[Assert\Sequentially([
         new Assert\NotBlank(message: 'Le CIN est obligatoire.'),
         new Assert\Regex(
-            pattern: '/^\d+$/',
-            message: 'Le CIN doit contenir uniquement des chiffres.'
-        ),
-        new Assert\Length(
-            min: 8,
-            minMessage: 'Le CIN doit contenir exactement 8 chiffres.',
-            max: 8,
-            maxMessage: 'Le CIN ne doit pas depasser 8 chiffres.'
+            pattern: '/^\d{8}$/',
+            message: 'Le CIN doit contenir exactement 8 chiffres.'
         ),
     ])]
     private string $cin;
@@ -94,7 +88,7 @@ class Kyc
 
     public function setCin(string $cin): static
     {
-        $this->cin = trim($cin);
+        $this->cin = preg_replace('/\s+/', '', trim($cin)) ?? trim($cin);
 
         return $this;
     }

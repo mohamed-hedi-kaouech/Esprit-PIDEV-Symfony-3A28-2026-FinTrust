@@ -338,7 +338,7 @@ class ClientController extends AbstractController
             $rating = (int) $commentForm->get('rating')->getData();
             $comment->setPublication($publication)
                 ->setUser($this->getUser())
-                ->setDateFeedback(new \DateTimeImmutable())
+                ->setDateFeedback(new \DateTime())
                 ->setTypeReaction('RATING_' . $rating);
 
             $this->em->persist($comment);
@@ -389,7 +389,7 @@ class ClientController extends AbstractController
         $feedback = new \App\Entity\User\Feedback();
         $feedback->setPublication($publication)
             ->setUser($this->getUser())
-            ->setDateFeedback(new \DateTimeImmutable())
+            ->setDateFeedback(new \DateTime())
             ->setTypeReaction($reaction);
 
         $this->em->persist($feedback);
