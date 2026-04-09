@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Repository;
+namespace App\Repository\Loan;
 
 use App\Entity\Loan\Loan;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -16,79 +16,96 @@ class LoanRepository extends ServiceEntityRepository
         parent::__construct($registry, Loan::class);
     }
 
-    public function findAll(): array
-    {
-        return $this->findBy([], ['loanId' => 'DESC']);
-    }
-
-    public function findByUserId(int $user): array
+    /**
+     * GET ALL LOANS - simple, no user join
+     */
+    public function getAllLoans(): array
     {
         return $this->createQueryBuilder('l')
-            ->andWhere('l.user = :user')
-            ->setParameter('userId', $user)
+            ->orderBy('l.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Standard findAll - returns all loans
+     */
+    public function findAll(): array
+    {
+        return $this->findBy([], ['createdAt' => 'DESC']);
+    }
+
+    /**
+     * Find by user ID - no user join needed
+     */
+    public function findByUserId(int $userId): array
+    {
+        return $this->createQueryBuilder('l')
+            ->andWhere('l.user = :userId')
+            ->setParameter('userId', $userId)
             ->orderBy('l.loanId', 'DESC')
             ->getQuery()
             ->getResult();
     }
 
+    /**
+     * Find by status - no user join
+     */
     public function findByStatus(string $status): array
     {
         return $this->createQueryBuilder('l')
             ->andWhere('l.status = :status')
             ->setParameter('status', $status)
-            ->orderBy('l.loanId', 'DESC')
+            ->orderBy('l.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
     }
 
+    /**
+     * Count by status
+     */
     public function countByStatus(string $status): int
     {
-        return $this->createQueryBuilder('l')
-            ->select('COUNT(l)')
+        return (int) $this->createQueryBuilder('l')
+            ->select('COUNT(l.loanId)')
             ->andWhere('l.status = :status')
             ->setParameter('status', $status)
             ->getQuery()
             ->getSingleScalarResult();
     }
 
-
-        public function findPendingLoans(): array
+    /**
+     * Find pending loans - no user join
+     */
+    public function findPendingLoans(): array
     {
         return $this->findByStatus('PENDING');
     }
 
+    /**
+     * Find active loans - no user join
+     */
     public function findActiveLoans(): array
     {
         return $this->createQueryBuilder('l')
-            ->leftJoin('l.user', 'u')
-            ->addSelect('u')
             ->where('l.status IN (:statuses)')
-            ->setParameter('statuses', ['APPROVED', 'ACTIVE'])
+            ->setParameter('statuses', ['ACTIVE', 'APPROVED'])
             ->orderBy('l.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
     }
 
-    public function findLoanWithUser(int $loanId): ?Loan
-    {
-        return $this->createQueryBuilder('l')
-            ->leftJoin('l.user', 'u')
-            ->addSelect('u')
-            ->where('l.loanId = :id')
-            ->setParameter('id', $loanId)
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
-
+    /**
+     * Find loan with repayments only - no user join
+     */
     public function findLoanWithRepayments(int $loanId): ?Loan
     {
         return $this->createQueryBuilder('l')
             ->leftJoin('l.repayments', 'r')
             ->addSelect('r')
-            ->leftJoin('l.user', 'u')
-            ->addSelect('u')
             ->where('l.loanId = :id')
             ->setParameter('id', $loanId)
+            ->orderBy('r.month', 'ASC')
             ->getQuery()
             ->getOneOrNullResult();
     }

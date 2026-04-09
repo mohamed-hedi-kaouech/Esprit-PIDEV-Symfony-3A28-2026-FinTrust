@@ -1,10 +1,10 @@
 <?php
 // src/Service/RepaymentService.php
-namespace App\Service;
+namespace App\Service\Loan;
 
-use App\Entity\Loan;
-use App\Entity\Repayment;
-use App\Repository\RepaymentRepository;
+use App\Entity\Loan\Loan;
+use App\Entity\Loan\Repayment;
+use App\Repository\Loan\RepaymentRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 class RepaymentService

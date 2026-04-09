@@ -1,7 +1,7 @@
 {# templates/admin/dashboard.html.twig #}
-{% extends 'base.html.twig' %}
+{% extends 'html/Loan/base.html.twig' %}
 
-{% block title %}Admin Dashboard - All Loans{% endblock %}
+{% block title %}Admin Dashboard - Loans{% endblock %}
 
 {% block body %}
 <div class="min-h-screen bg-slate-50">
@@ -22,10 +22,10 @@
 
     {# Main Content #}
     <main class="ml-64 p-8">
-        {# Filter Stats #}
+        {# Filter Cards #}
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
             <a href="{{ path('admin_dashboard', {status: 'all'}) }}" class="bg-white rounded-xl shadow-sm p-4 border-2 {{ currentFilter == 'all' ? 'border-emerald-500' : 'border-transparent' }} hover:shadow-md transition-all">
-                <p class="text-slate-500 text-xs font-medium uppercase">All Loans</p>
+                <p class="text-slate-500 text-xs font-medium uppercase">All</p>
                 <h3 class="text-2xl font-bold text-slate-800 mt-1">{{ counts.all }}</h3>
             </a>
             
@@ -53,7 +53,7 @@
         {# Flash Messages #}
         {% for label, messages in app.flashes %}
             {% for message in messages %}
-                <div class="mb-6 p-4 rounded-lg {% if label == 'success' %}bg-emerald-100 text-emerald-800{% else %}bg-red-100 text-red-800{% endif %} flex items-center gap-2">
+                <div class="mb-6 p-4 rounded-lg {% if label == 'success' %}bg-emerald-100 text-emerald-800 border border-emerald-200{% else %}bg-red-100 text-red-800 border border-red-200{% endif %} flex items-center gap-2">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                     {{ message }}
                 </div>
@@ -64,15 +64,14 @@
         <div class="bg-white rounded-xl shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
                 <h2 class="text-lg font-bold text-slate-800">{{ currentFilter|capitalize }} Loans</h2>
-                <span class="bg-slate-100 text-slate-700 text-xs font-bold px-3 py-1 rounded-full">{{ filteredLoans|length }} loans</span>
+                <span class="bg-slate-100 text-slate-700 text-xs font-bold px-3 py-1 rounded-full">{{ loans|length }} loans</span>
             </div>
             
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider">
                         <tr>
-                            <th class="px-6 py-3 text-left font-semibold">Loan ID</th>
-                            <th class="px-6 py-3 text-left font-semibold">Client</th>
+                            <th class="px-6 py-3 text-left font-semibold">ID</th>
                             <th class="px-6 py-3 text-left font-semibold">Type</th>
                             <th class="px-6 py-3 text-left font-semibold">Amount</th>
                             <th class="px-6 py-3 text-left font-semibold">Duration</th>
@@ -83,17 +82,9 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        {% for loan in filteredLoans %}
+                        {% for loan in loans %}
                         <tr class="hover:bg-slate-50 transition-colors">
                             <td class="px-6 py-4 font-mono text-slate-600">#{{ loan.loanId }}</td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm">
-                                        {{ loan.user ? loan.user.email|first|upper : '?' }}
-                                    </div>
-                                    <span class="text-slate-700 font-medium">{{ loan.user ? loan.user.email : 'Unknown' }}</span>
-                                </div>
-                            </td>
                             <td class="px-6 py-4">
                                 <span class="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs font-medium">{{ loan.loanType }}</span>
                             </td>
@@ -101,14 +92,12 @@
                             <td class="px-6 py-4 text-slate-600">{{ loan.duration }} months</td>
                             <td class="px-6 py-4 text-slate-600">{{ loan.interestRate }}%</td>
                             <td class="px-6 py-4">
-                                {% set statusColors = {
-                                    'PENDING': 'bg-amber-100 text-amber-700',
-                                    'ACTIVE': 'bg-emerald-100 text-emerald-700',
-                                    'APPROVED': 'bg-blue-100 text-blue-700',
-                                    'COMPLETED': 'bg-purple-100 text-purple-700',
-                                    'REJECTED': 'bg-red-100 text-red-700'
-                                } %}
-                                <span class="px-2 py-1 rounded text-xs font-bold {{ statusColors[loan.status] ?? 'bg-slate-100 text-slate-700' }}">
+                                <span class="px-2 py-1 rounded text-xs font-bold 
+                                    {{ loan.status == 'PENDING' ? 'bg-amber-100 text-amber-700' : 
+                                       loan.status == 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 
+                                       loan.status == 'APPROVED' ? 'bg-blue-100 text-blue-700' : 
+                                       loan.status == 'COMPLETED' ? 'bg-purple-100 text-purple-700' : 
+                                       'bg-red-100 text-red-700' }}">
                                     {{ loan.status }}
                                 </span>
                             </td>
@@ -123,13 +112,13 @@
                                     {% if loan.status == 'PENDING' %}
                                         <form action="{{ path('admin_loan_approve', {id: loan.loanId}) }}" method="POST" class="inline">
                                             <input type="hidden" name="_token" value="{{ csrf_token('approve_loan_' ~ loan.loanId) }}">
-                                            <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1.5 rounded-lg text-sm transition-colors" onclick="return confirm('Approve this loan?')">
+                                            <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white px-2 py-1.5 rounded-lg text-sm transition-colors" onclick="return confirm('Approve this loan?')" title="Approve">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                                             </button>
                                         </form>
                                         <form action="{{ path('admin_loan_reject', {id: loan.loanId}) }}" method="POST" class="inline">
                                             <input type="hidden" name="_token" value="{{ csrf_token('reject_loan_' ~ loan.loanId) }}">
-                                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1.5 rounded-lg text-sm transition-colors" onclick="return confirm('Reject this loan?')">
+                                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1.5 rounded-lg text-sm transition-colors" onclick="return confirm('Reject this loan?')" title="Reject">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                             </button>
                                         </form>
@@ -145,7 +134,8 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="9" class="px-6 py-12 text-center text-slate-400">
+                            <td colspan="8" class="px-6 py-12 text-center text-slate-400">
+                                <svg class="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                 No {{ currentFilter }} loans found
                             </td>
                         </tr>

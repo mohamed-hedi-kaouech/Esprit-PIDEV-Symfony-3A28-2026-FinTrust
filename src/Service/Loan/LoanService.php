@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Service;
+namespace App\Service\Loan;
 
-use App\Entity\Loan;
-use App\Entity\Repayment;
-use App\Repository\LoanRepository;
-use App\Repository\RepaymentRepository;
+use App\Entity\Loan\Loan;;
+use App\Entity\Loan\Repayment;
+use App\Repository\Loan\LoanRepository;
+use App\Repository\Loan\RepaymentRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 
@@ -14,14 +14,15 @@ class LoanService
     private EntityManagerInterface $em;
     private LoanRepository $loanRepository;
     private RepaymentRepository $repaymentRepository;
-
-    public function __construct(EntityManagerInterface $em)
-    {
+    public function __construct(
+        EntityManagerInterface $em,
+        LoanRepository $loanRepository,
+        RepaymentRepository $repaymentRepository
+    ) {
         $this->em = $em;
-        $this->loanRepository = $em->getRepository(Loan::class);
-        $this->repaymentRepository = $em->getRepository(Repayment::class);
+        $this->loanRepository = $loanRepository;
+        $this->repaymentRepository = $repaymentRepository;
     }
-
     /**
      * Create a new loan and generate repayment plan
      */
@@ -161,13 +162,49 @@ class LoanService
         return $repayments;
     }
 
+
+    public function generateRepaymentPreview(Loan $loan): array
+    {
+        $plan = [];
+        $monthlyRate = $loan->getInterestRate() / 100 / 12;
+        $monthlyPayment = $this->calculateMonthlyPayment($loan);
+        $balance = (float) $loan->getAmount();
+
+        for ($i = 1; $i <= $loan->getDuration(); $i++) {
+            $interest = $balance * $monthlyRate;
+            $capital = $monthlyPayment - $interest;
+            $remaining = max(0, $balance - $capital);
+
+            $plan[] = [
+                'month' => $i,
+                'startingBalance' => $balance,
+                'monthlyPayment' => $monthlyPayment,
+                'capitalPart' => $capital,
+                'interestPart' => $interest,
+                'remainingBalance' => $remaining,
+            ];
+
+            $balance = $remaining;
+        }
+
+        return $plan;
+    }
+
+        public function getNextUnpaidRepayment(Loan $loan): ?Repayment
+    {
+        foreach ($loan->getRepayments() as $repayment) {
+            if ($repayment->getStatus() === 'UNPAID') {
+                return $repayment;
+            }
+        }
+        return null;
+    }
     /**
      * Get loan statistics for dashboard
      */
     public function getStatistics(): array
     {
         $total = $this->loanRepository->countByStatus('ACTIVE') 
-               + $this->loanRepository->countByStatus('PENDING') 
                + $this->loanRepository->countByStatus('COMPLETED');
         
         return [
@@ -256,4 +293,36 @@ class LoanService
             'totalInterest' => $this->calculateTotalInterest($loan),
         ];
     }
+
+    public function payRepayment(int $repaymentId, int $userId): void
+        {
+            $repayment = $this->repaymentRepository->find($repaymentId);
+            
+            if (!$repayment) {
+                throw new \Exception('Repayment not found');
+            }
+
+            $loan = $repayment->getLoan();
+            
+            // Verify ownership
+            if ($loan->getUser()->getId() !== $userId) {
+                throw new \Exception('Access denied');
+            }
+
+            // Verify loan is active
+            if ($loan->getStatus() !== 'ACTIVE') {
+                throw new \Exception('Loan is not active');
+            }
+
+            // Verify previous repayments are paid
+            foreach ($loan->getRepayments() as $r) {
+                if ($r->getMonth() < $repayment->getMonth() && $r->getStatus() === 'UNPAID') {
+                    throw new \Exception('Previous installments must be paid first');
+                }
+            }
+
+            // Mark as paid
+            $this->markRepaymentPaid($repayment);
+        }
+        
 }
