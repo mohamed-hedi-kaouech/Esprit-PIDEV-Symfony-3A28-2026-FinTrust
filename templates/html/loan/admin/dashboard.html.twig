@@ -49,7 +49,38 @@
                 <h3 class="text-2xl font-bold text-red-600 mt-1">{{ counts.rejected }}</h3>
             </a>
         </div>
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+    <h2 class="text-xl font-bold text-slate-800 mb-4">Risk Analytics</h2>
 
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Chart -->
+        <div>
+            <canvas id="riskChart"></canvas>
+        </div>
+
+        <!-- Stats -->
+        <div class="flex flex-col justify-center space-y-4">
+
+            <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                <span class="text-green-700 font-medium">Low Risk</span>
+                <span class="text-green-700 font-bold text-lg">{{ riskCounts.LOW }}</span>
+            </div>
+
+            <div class="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
+                <span class="text-yellow-700 font-medium">Medium Risk</span>
+                <span class="text-yellow-700 font-bold text-lg">{{ riskCounts.MEDIUM }}</span>
+            </div>
+
+            <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                <span class="text-red-700 font-medium">High Risk</span>
+                <span class="text-red-700 font-bold text-lg">{{ riskCounts.HIGH }}</span>
+            </div>
+
+        </div>
+
+    </div>
+</div>
         {# Flash Messages #}
         {% for label, messages in app.flashes %}
             {% for message in messages %}
@@ -146,4 +177,51 @@
         </div>
     </main>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const ctx = document.getElementById('riskChart');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+            datasets: [{
+                label: 'Risk Distribution',
+                data: [
+                    {{ riskCounts.LOW }},
+                    {{ riskCounts.MEDIUM }},
+                    {{ riskCounts.HIGH }}
+                ],
+                fill: true,
+                tension: 0.4,
+                borderWidth: 3,
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true
+                }
+            }
+        }
+    });
+
+});
+</script>
 {% endblock %}

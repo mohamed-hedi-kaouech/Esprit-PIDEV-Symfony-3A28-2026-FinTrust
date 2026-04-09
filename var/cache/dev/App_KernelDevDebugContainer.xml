@@ -369,6 +369,7 @@
       <tag name="controller.service_arguments"/>
       <tag name="container.service_subscriber"/>
       <argument type="service" id="App\Service\Loan\LoanService"/>
+      <argument type="service" id="App\Service\Loan\LoanRiskService"/>
       <argument type="service" id="security.csrf.token_manager"/>
       <call method="setContainer">
         <argument type="service" id=".service_locator.O2p6Lk7.App\Controller\LoanController\AdminLoanController"/>
@@ -405,6 +406,7 @@
       <tag name="doctrine.repository_service"/>
       <argument type="service" id="doctrine"/>
     </service>
+    <service id="App\Service\Loan\LoanRiskService" class="App\Service\Loan\LoanRiskService" autowire="true" autoconfigure="true"/>
     <service id="App\Service\Loan\LoanService" class="App\Service\Loan\LoanService" autowire="true" autoconfigure="true">
       <argument type="service" id="doctrine.orm.default_entity_manager"/>
       <argument type="service" id="App\Repository\Loan\LoanRepository"/>

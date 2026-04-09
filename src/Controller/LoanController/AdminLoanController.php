@@ -4,6 +4,7 @@ namespace App\Controller\LoanController;
 
 use App\Repository\Loan\LoanRepository;
 use App\Service\Loan\LoanService;
+use App\Service\Loan\LoanRiskService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,8 +17,13 @@ class AdminLoanController extends AbstractController
 {
     public function __construct(
         private LoanService $loanService,
+        private LoanRiskService $riskService,
         private CsrfTokenManagerInterface $csrfTokenManager,
     ) {}
+
+    // -------------------------------------------------------------------------
+    // Dashboard
+    // -------------------------------------------------------------------------
 
     #[Route('/dashboard', name: 'admin_dashboard')]
     public function dashboard(LoanRepository $loanRepo, Request $request): Response
@@ -40,12 +46,42 @@ class AdminLoanController extends AbstractController
             'rejected'  => $loanRepo->countByStatus('REJECTED'),
         ];
 
+        // Chart 1 — total amount per loan type
+        $allLoans  = $loanRepo->getAllLoans();
+        $chartData = ['personnel' => 0, 'voiture' => 0, 'logement' => 0];
+        foreach ($allLoans as $l) {
+            $key = strtolower($l->getLoanType());
+            if (isset($chartData[$key])) {
+                $chartData[$key] += (float) $l->getAmount();
+            }
+        }
+        $chartData = array_map(fn($v) => round($v, 3), $chartData);
+
+        // Chart 2 — risk distribution across ALL loans
+        $riskCounts = ['LOW' => 0, 'MEDIUM' => 0, 'HIGH' => 0];
+        foreach ($allLoans as $l) {
+            $riskCounts[$this->riskService->level($l)]++;
+        }
+
+        // Risk score per loan in current view (for table column)
+        $loanRisks = [];
+        foreach ($loans as $l) {
+            $loanRisks[$l->getLoanId()] = $this->riskService->assess($l);
+        }
+
         return $this->render('html/Loan/Admin/dashboard.html.twig', [
             'loans'         => $loans,
             'currentFilter' => $status,
             'counts'        => $counts,
+            'chartData'     => $chartData,
+            'riskCounts'    => $riskCounts,
+            'loanRisks'     => $loanRisks,
         ]);
     }
+
+    // -------------------------------------------------------------------------
+    // Approve / Reject
+    // -------------------------------------------------------------------------
 
     #[Route('/loan/{id}/approve', name: 'admin_loan_approve', methods: ['POST'])]
     public function approveLoan(int $id, LoanRepository $loanRepo, Request $request): Response
@@ -66,7 +102,7 @@ class AdminLoanController extends AbstractController
 
         $this->loanService->approveLoan($loan->getLoanId());
 
-        $this->addFlash('success', sprintf('Loan #%d approved successfully', $id));
+        $this->addFlash('success', sprintf('Prêt #%d approuvé avec succès.', $id));
         return $this->redirectToRoute('admin_dashboard');
     }
 
@@ -90,9 +126,13 @@ class AdminLoanController extends AbstractController
         $loan->setStatus('REJECTED');
         $this->loanService->rejectLoan($loan->getLoanId());
 
-        $this->addFlash('success', 'Loan rejected');
+        $this->addFlash('success', 'Prêt rejeté.');
         return $this->redirectToRoute('admin_dashboard');
     }
+
+    // -------------------------------------------------------------------------
+    // Review page (with risk panel)
+    // -------------------------------------------------------------------------
 
     #[Route('/loan/{id}/review', name: 'admin_loan_review')]
     public function reviewLoan(int $id, LoanRepository $loanRepo): Response
@@ -103,13 +143,12 @@ class AdminLoanController extends AbstractController
             throw $this->createNotFoundException('Loan not found');
         }
 
-        $monthlyPayment = $this->loanService->calculateMonthlyPayment($loan);
-
-        // getLoanStats() returns keys: paidCount, unpaidCount, totalPaid, totalUnpaid,
-        // progress, monthlyPayment, totalInterest.
-        // The admin templates also need progressPercent — we add it here.
+        $monthlyPayment           = $this->loanService->calculateMonthlyPayment($loan);
         $stats                    = $this->loanService->getLoanStats($loan);
-        $stats['progressPercent'] = $stats['progress']; // alias for template compatibility
+        $stats['progressPercent'] = $stats['progress'];
+
+        // Full risk assessment for the dedicated panel
+        $risk = $this->riskService->assess($loan);
 
         return $this->render('html/Loan/Admin/loan_review.html.twig', [
             'loan'        => $loan,
@@ -119,12 +158,17 @@ class AdminLoanController extends AbstractController
                 'totalCost'      => $monthlyPayment * $loan->getDuration(),
             ],
             'stats'       => $stats,
+            'risk'        => $risk,
             'isPending'   => $loan->getStatus() === 'PENDING',
             'isActive'    => in_array($loan->getStatus(), ['ACTIVE', 'APPROVED']),
             'isCompleted' => $loan->getStatus() === 'COMPLETED',
             'isRejected'  => $loan->getStatus() === 'REJECTED',
         ]);
     }
+
+    // -------------------------------------------------------------------------
+    // Repayment history
+    // -------------------------------------------------------------------------
 
     #[Route('/loan/{id}/repayments', name: 'admin_loan_repayments')]
     public function viewRepayments(int $id, LoanRepository $loanRepo): Response
@@ -135,12 +179,10 @@ class AdminLoanController extends AbstractController
             throw $this->createNotFoundException('Loan not found');
         }
 
-        // getLoanStats() returns `progress`; add `progressPercent` + `isCompleted` aliases
         $stats                    = $this->loanService->getLoanStats($loan);
         $stats['progressPercent'] = $stats['progress'];
         $stats['isCompleted']     = $loan->getStatus() === 'COMPLETED';
 
-        // repayments.html.twig shows "Next Payment Due" banner — needs nextUnpaid
         $nextUnpaid = $this->loanService->getNextUnpaidRepayment($loan);
 
         return $this->render('html/Loan/admin/repayments.html.twig', [
