@@ -337,6 +337,6 @@ class __TwigTemplate_35fc05dd6014f754c3666aec57498d42 extends Template
         {% block body '' %}
     </body>
 </html>
-", "@WebProfiler/Profiler/base.html.twig", "C:\\Users\\Lenovo\\Desktop\\Hedi\\Esprit-PIDEV-Symfony-3A28-2026-FinTrust\\vendor\\symfony\\web-profiler-bundle\\Resources\\views\\Profiler\\base.html.twig");
+", "@WebProfiler/Profiler/base.html.twig", "C:\\Users\\ahmed\\ESPRIT\\3A28\\PI DEV\\PIDEV-V2\\Esprit-PIDEV-3A28-2526-Symfony-Fintrust\\vendor\\symfony\\web-profiler-bundle\\Resources\\views\\Profiler\\base.html.twig");
     }
 }

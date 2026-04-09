@@ -709,6 +709,6 @@ class __TwigTemplate_751137d0e9538468b210c9d1b56de0df extends Template
         {% endif %}
     </div>
 {% endblock %}
-", "@WebProfiler/Collector/http_client.html.twig", "C:\\Users\\Lenovo\\Desktop\\Hedi\\Esprit-PIDEV-Symfony-3A28-2026-FinTrust\\vendor\\symfony\\web-profiler-bundle\\Resources\\views\\Collector\\http_client.html.twig");
+", "@WebProfiler/Collector/http_client.html.twig", "C:\\Users\\ahmed\\ESPRIT\\3A28\\PI DEV\\PIDEV-V2\\Esprit-PIDEV-3A28-2526-Symfony-Fintrust\\vendor\\symfony\\web-profiler-bundle\\Resources\\views\\Collector\\http_client.html.twig");
     }
 }

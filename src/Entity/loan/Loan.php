@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity;
+namespace App\Entity\Loan;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -37,14 +37,16 @@ class Loan
     #[ORM\Column(name: 'createdAt', type: 'datetime')]
     private \DateTimeInterface $createdAt;
 
-    #[ORM\Column(name: 'id_user', type: 'integer', nullable: true)]
-    private int|null $idUser = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'id_user', referencedColumnName: 'id', nullable: true, onDelete: 'CASCADE')]
     private User|null $user = null;
 
-    #[ORM\OneToMany(targetEntity: Repayment::class, mappedBy: 'loan')]
+    #[ORM\OneToMany(
+    targetEntity: Repayment::class,
+    mappedBy: 'loan',
+    cascade: ['persist', 'remove']
+    )]
     private Collection $repayments;
 
     public function __construct()
@@ -134,16 +136,6 @@ class Loan
         return $this;
     }
 
-    public function getIdUser(): int|null
-    {
-        return $this->idUser;
-    }
-
-    public function setIdUser(int|null $idUser): static
-    {
-        $this->idUser = $idUser;
-        return $this;
-    }
 
     public function getUser(): User|null
     {

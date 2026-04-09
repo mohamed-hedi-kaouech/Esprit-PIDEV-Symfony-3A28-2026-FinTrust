@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity;
+namespace App\Entity\Loan;
 
 use Doctrine\ORM\Mapping as ORM;
 
@@ -12,9 +12,6 @@ class Repayment
     #[ORM\Column(name: 'repayId', type: 'integer')]
     #[ORM\GeneratedValue]
     private int $repayId;
-
-    #[ORM\Column(name: 'loanId', type: 'integer')]
-    private int $loanId;
 
     #[ORM\Column(name: 'month', type: 'integer')]
     private int $month;
@@ -44,17 +41,6 @@ class Repayment
     public function getRepayId(): int
     {
         return $this->repayId;
-    }
-
-    public function getLoanId(): int
-    {
-        return $this->loanId;
-    }
-
-    public function setLoanId(int $loanId): static
-    {
-        $this->loanId = $loanId;
-        return $this;
     }
 
     public function getMonth(): int

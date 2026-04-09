@@ -15,6 +15,7 @@ return [
         '/_profiler/xdebug' => [[['_route' => '_profiler_xdebug', '_controller' => 'web_profiler.controller.profiler::xdebugAction'], null, null, null, false, false, null]],
         '/_profiler/open' => [[['_route' => '_profiler_open_file', '_controller' => 'web_profiler.controller.profiler::openAction'], null, null, null, false, false, null]],
         '/' => [[['_route' => 'app', '_controller' => 'App\\Controller\\LandingPage::index'], null, null, null, false, false, null]],
+        '/admin/dashboard' => [[['_route' => 'admin_dashboard', '_controller' => 'App\\Controller\\LoanController\\AdminController::dashboard'], null, null, null, false, false, null]],
     ],
     [ // $regexpList
         0 => '{^(?'
@@ -36,6 +37,14 @@ return [
                         .')'
                     .')'
                 .')'
+                .'|/admin/loan/([^/]++)/(?'
+                    .'|approve(*:233)'
+                    .'|re(?'
+                        .'|ject(*:250)'
+                        .'|view(*:262)'
+                        .'|payments(*:278)'
+                    .')'
+                .')'
             .')/?$}sDu',
     ],
     [ // $dynamicRoutes
@@ -46,8 +55,12 @@ return [
         148 => [[['_route' => '_profiler_router', '_controller' => 'web_profiler.controller.router::panelAction'], ['token'], null, null, false, false, null]],
         168 => [[['_route' => '_profiler_exception', '_controller' => 'web_profiler.controller.exception_panel::body'], ['token'], null, null, false, false, null]],
         181 => [[['_route' => '_profiler_exception_css', '_controller' => 'web_profiler.controller.exception_panel::stylesheet'], ['token'], null, null, false, false, null]],
-        191 => [
-            [['_route' => '_profiler', '_controller' => 'web_profiler.controller.profiler::panelAction'], ['token'], null, null, false, true, null],
+        191 => [[['_route' => '_profiler', '_controller' => 'web_profiler.controller.profiler::panelAction'], ['token'], null, null, false, true, null]],
+        233 => [[['_route' => 'admin_loan_approve', '_controller' => 'App\\Controller\\LoanController\\AdminController::approveLoan'], ['id'], ['POST' => 0], null, false, false, null]],
+        250 => [[['_route' => 'admin_loan_reject', '_controller' => 'App\\Controller\\LoanController\\AdminController::rejectLoan'], ['id'], ['POST' => 0], null, false, false, null]],
+        262 => [[['_route' => 'admin_loan_review', '_controller' => 'App\\Controller\\LoanController\\AdminController::reviewLoan'], ['id'], null, null, false, false, null]],
+        278 => [
+            [['_route' => 'admin_loan_repayments', '_controller' => 'App\\Controller\\LoanController\\AdminController::viewRepayments'], ['id'], null, null, false, false, null],
             [null, null, null, null, false, false, 0],
         ],
     ],

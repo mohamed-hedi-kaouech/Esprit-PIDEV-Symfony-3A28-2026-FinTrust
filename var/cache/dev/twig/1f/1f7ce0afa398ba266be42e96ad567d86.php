@@ -1009,6 +1009,6 @@ class __TwigTemplate_36b22852cd1ef75ec8e72635d04260df extends Template
 
   <script src=\"{{ asset('js/Script.js') }}\" defer></script>
 </body>
-</html>", "html/LandingPage.html.twig", "C:\\Users\\Lenovo\\Desktop\\Hedi\\Esprit-PIDEV-Symfony-3A28-2026-FinTrust\\templates\\html\\LandingPage.html.twig");
+</html>", "html/LandingPage.html.twig", "C:\\Users\\ahmed\\ESPRIT\\3A28\\PI DEV\\PIDEV-V2\\Esprit-PIDEV-3A28-2526-Symfony-Fintrust\\templates\\html\\LandingPage.html.twig");
     }
 }

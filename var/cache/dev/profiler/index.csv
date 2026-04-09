@@ -24,3 +24,11 @@ fed7b6,::1,GET,http://localhost:8000/,1775338250,,200,request
 3cfe22,::1,GET,http://localhost:8000/,1775338894,,200,request
 cfc5a3,::1,GET,http://localhost:8000/,1775338995,,200,request
 581e7c,::1,GET,http://localhost:8000/,1775339019,,200,request
+640f67,127.0.0.1,GET,http://127.0.0.1:8000/,1775642185,,200,request
+bbc536,127.0.0.1,GET,http://127.0.0.1:8000/,1775724428,286d50,500,request
+286d50,127.0.0.1,GET,http://127.0.0.1:8000/,1775724428,,500,request
+d77e11,127.0.0.1,GET,http://127.0.0.1:8000/,1775724536,,200,request
+eacbb4,127.0.0.1,GET,http://127.0.0.1:8000/admin,1775724542,a18ead,404,request
+a18ead,127.0.0.1,GET,http://127.0.0.1:8000/admin,1775724542,,404,request
+f80ff0,127.0.0.1,GET,http://127.0.0.1:8000/admin/dashboard,1775724564,3005e9,500,request
+3005e9,127.0.0.1,GET,http://127.0.0.1:8000/admin/dashboard,1775724564,,500,request
