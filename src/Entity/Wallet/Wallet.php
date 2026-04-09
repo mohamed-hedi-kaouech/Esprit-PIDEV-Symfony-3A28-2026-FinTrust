@@ -59,7 +59,7 @@ class Wallet
     #[ORM\Column(name: 'est_bloque', type: 'boolean', nullable: true)]
     private bool|null $estBloque = false;
 
-    #[ORM\ManyToOne(targetEntity: \App\Entity\User\User::class)]
+    #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'id_user', referencedColumnName: 'id', nullable: true)]
     private User|null $user = null;
 

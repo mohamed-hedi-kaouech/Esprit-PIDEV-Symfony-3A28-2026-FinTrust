@@ -8,6 +8,7 @@ use App\Form\Admin\AdminUserEditFormType;
 use App\Repository\KycRepository;
 use App\Repository\UserRepository;
 use App\Service\ExportService;
+use App\Service\KycService;
 use App\Service\NotificationService;
 use App\Service\QrCodeService;
 use App\Service\UserService;
@@ -38,6 +39,7 @@ class UserController extends AbstractController
         private readonly KycRepository       $kycRepository,
         private readonly UserService         $userService,
         private readonly ExportService       $exportService,
+        private readonly KycService          $kycService,
         private readonly NotificationService $notificationService,
         private readonly QrCodeService       $qrCodeService,
         private readonly ValidatorInterface  $validator,
@@ -103,6 +105,7 @@ class UserController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $plainPassword = (string) $form->get('plainPassword')->getData();
             $this->userService->createClientByAdmin($user, $plainPassword);
+            $this->kycService->synchronizeApprovedUserWallet($user);
 
             $this->notificationService->notify(
                 $user,
@@ -131,6 +134,7 @@ class UserController extends AbstractController
     #[Route('/{id}/modifier', name: 'edit', methods: ['GET', 'POST'])]
     public function edit(User $user, Request $request): Response
     {
+        $previousKycStatus = $user->getKycStatus();
         $form = $this->createForm(AdminUserEditFormType::class, $user);
         $form->handleRequest($request);
         $kyc = $this->kycRepository->findLatestByUser($user);
@@ -142,6 +146,11 @@ class UserController extends AbstractController
 
             $plainPassword = $form->get('plainPassword')->getData();
             $this->userService->updateProfile($user, $plainPassword ?: null);
+            $this->kycService->synchronizeApprovedUserWallet($user);
+
+            if ($previousKycStatus !== User::KYC_APPROUVE && $user->getKycStatus() === User::KYC_APPROUVE) {
+                $this->notificationService->notifyKycApproved($user);
+            }
             $this->addFlash('success', "L'utilisateur {$user->getFullName()} a été mis à jour.");
             return $this->redirectToRoute('admin_user_list');
         }
