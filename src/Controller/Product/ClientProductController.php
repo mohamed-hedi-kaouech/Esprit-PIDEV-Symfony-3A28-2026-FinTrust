@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-final class CleintProductController extends AbstractController
+final class ClientProductController extends AbstractController
 {
     #[Route('/Product/ClientList', name: 'Client_product_list')]
     public function list(Request $request, ProductRepository $repo): Response
@@ -36,10 +36,10 @@ final class CleintProductController extends AbstractController
         EntityManagerInterface $em
     ): Response {
 
-        $clientId  = 1;
+        $user = $this->getUser();
+        $clientId     = $user->getId(); // new filter
         $productId = (int) $request->request->get('Productid');
 
-        dump($productId);
         // ── CSRF ──────────────────────────────────────────────────────────────
         if (!$this->isCsrfTokenValid('BuyProduct_', $request->request->get('_token'))) {
             $this->addFlash('error', 'Requête invalide (CSRF)');
@@ -75,7 +75,7 @@ final class CleintProductController extends AbstractController
 
         // ── Create subscription ───────────────────────────────────────────────
         $subscription = new ProductSubscription();
-        $subscription->setClient(1);
+        $subscription->setClient($clientId);
         $subscription->setProduct($productId);
         $subscription->setClientUser($user);
         $subscription->setProductObj($product);

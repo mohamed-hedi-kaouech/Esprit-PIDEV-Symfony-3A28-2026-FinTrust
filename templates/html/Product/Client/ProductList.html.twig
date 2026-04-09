@@ -1,199 +1,214 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Liste des Produits</title>
+{% extends 'front/front.html.twig' %}
+{% block title %}List Produit{% endblock %}
+
+{% block body %}
+
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Fraunces:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ asset('css/Product/StyleProduct.css') }}">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</head>
-<body>
 
-<div class="page">
+  <style>
+    {% for i in 1..50 %}
+    .pl-card:nth-child({{ i }}) { animation-delay: {{ (i - 1) * 0.04 }}s; }
+    {% endfor %}
+  </style>
 
-  {# ── Header ── #}
-  <div class="header">
-    <a href="#" class="btn-back">&#8592; Retour</a>
-    <span class="page-title">Liste des Produits</span>
-    <div class="spacer"></div>
-  </div>
+  <div class="pl-page">
 
-  <div class="list-container">
+    {# ── Header ── #}
+    <div class="pl-header">
+      <h1 class="pl-title">Nos Produits</h1>
+      <div class="pl-count">{{ products|length }} produit{{ products|length != 1 ? 's' : '' }}</div>
+    </div>
 
-    {# ── Search & Filter form (GET → controller handles logic) ── #}
+    {# ── Controls ── #}
     <form method="GET" action="{{ path('Client_product_list') }}">
+      <div class="pl-controls">
 
-      <div class="search-row">
-        <input
-                class="search-input"
-                type="text"
-                name="search"
-                placeholder="🔍 Rechercher un produit..."
-                value="{{ app.request.query.get('search') }}"
-        />
-        <button type="submit" class="btn-search">Rechercher</button>
-        <a href="{{ path('Client_product_list') }}" class="btn-reset">Réinitialiser</a>
-      </div>
+        <div class="pl-search-wrap">
+          <input
+                  class="pl-input"
+                  type="text"
+                  name="search"
+                  placeholder="🔍 Rechercher un produit..."
+                  value="{{ app.request.query.get('search') }}"
+          />
+          <button type="submit" class="pl-btn pl-btn-primary">Rechercher</button>
+          <a href="{{ path('Client_product_list') }}" class="pl-btn pl-btn-ghost">✕</a>
+        </div>
 
-      <div class="filter-row">
-        <span class="filter-label">Filtrer par catégorie :</span>
-        <select name="category" class="filter-select" onchange="this.form.submit()">
-          <option value="">Toutes les catégories</option>
+        <div class="pl-divider"></div>
+
+        <span class="pl-filter-label">Catégorie</span>
+        <select name="category" class="pl-select" onchange="this.form.submit()">
+          <option value="">Toutes</option>
           {% set categories = [] %}
-
           {% for product in products %}
             {% if product.category not in categories %}
               {% set categories = categories|merge([product.category]) %}
             {% endif %}
           {% endfor %}
-
-          {% set categories = categories|sort %}
-          {% for cat in categories %}
+          {% for cat in categories|sort %}
             <option value="{{ cat }}" {% if app.request.query.get('category') == cat %}selected{% endif %}>
               {{ cat|replace({'_': ' '})|title }}
             </option>
           {% endfor %}
         </select>
 
-        <span class="filter-label" style="margin-left:8px;">Trier par :</span>
-        <select name="sort" class="filter-select" onchange="this.form.submit()">
+        <span class="pl-filter-label">Trier</span>
+        <select name="sort" class="pl-select" onchange="this.form.submit()">
           <option value="">Par défaut</option>
-          <option value="price_asc"  {% if app.request.query.get('sort') == 'price_asc'  %}selected{% endif %}>Prix croissant</option>
-          <option value="price_desc" {% if app.request.query.get('sort') == 'price_desc' %}selected{% endif %}>Prix décroissant</option>
+          <option value="price_asc"  {% if app.request.query.get('sort') == 'price_asc'  %}selected{% endif %}>Prix ↑</option>
+          <option value="price_desc" {% if app.request.query.get('sort') == 'price_desc' %}selected{% endif %}>Prix ↓</option>
           <option value="date_desc"  {% if app.request.query.get('sort') == 'date_desc'  %}selected{% endif %}>Plus récent</option>
           <option value="date_asc"   {% if app.request.query.get('sort') == 'date_asc'   %}selected{% endif %}>Plus ancien</option>
         </select>
+
       </div>
     </form>
 
-    {# ── Active search indicator ── #}
+    {# ── Active filter indicator ── #}
     {% set searchTerm = app.request.query.get('search') %}
     {% set filterCat  = app.request.query.get('category') %}
     {% if searchTerm or filterCat %}
-      <div class="active-search-bar">
-        Résultats filtrés
+      <div class="pl-active-bar">
+        🔎 Résultats filtrés
         {% if searchTerm %} — recherche : <strong>"{{ searchTerm }}"</strong>{% endif %}
         {% if filterCat  %} — catégorie : <strong>{{ filterCat|replace({'_': ' '})|title }}</strong>{% endif %}
       </div>
     {% endif %}
 
-    {# ── Flash messages ── #}
-    {% for message in app.flashes('success') %}
-      <script>
-        document.addEventListener('DOMContentLoaded', function () {
-          Swal.fire({
-            icon: 'success',
-            title: '{{ message }}',
-            showConfirmButton: false,
-            timer: 2000
-          });
-        });
-      </script>
-    {% endfor %}
-    {% for message in app.flashes('error') %}
-      <script>
-        document.addEventListener('DOMContentLoaded', function () {
-          Swal.fire({
-            icon: 'error',
-            title: '{{ message }}',
-            showConfirmButton: true
-          });
-        });
-      </script>
-    {% endfor %}
+    {# ── Card Grid ── #}
+    {% set strips = ['strip-blue','strip-green','strip-amber','strip-purple','strip-coral'] %}
+    {% set icons  = ['icon-blue','icon-green','icon-amber','icon-purple','icon-coral'] %}
+    {% set badges = ['badge-blue','badge-green','badge-amber','badge-purple','badge-coral'] %}
 
-    {# ── Table ── #}
-    <table class="product-table">
-      <thead>
-      <tr>
-        <th style="width:52px;"></th>
-        <th>Catégorie</th>
-        <th>Prix</th>
-        <th>Description</th>
-        <th>Date création</th>
-        <th>Action</th>
-      </tr>
-      </thead>
-      <tbody>
+    <div class="pl-grid">
+
       {% if products is empty %}
-        <tr>
-          <td colspan="7">
-            <div class="empty-state">Aucun produit trouvé.</div>
-          </td>
-        </tr>
+        <div class="pl-empty">
+          <div class="pl-empty-icon">📭</div>
+          <div class="pl-empty-text">Aucun produit trouvé.</div>
+        </div>
       {% else %}
         {% for product in products %}
-          <tr>
-            <td>
-              <div class="product-icon">
-                {{ product.category|slice(0,2)|upper }}
-              </div>
-            </td>
-            <td>
-                <span class="badge {{ cycle(['badge-blue','badge-green','badge-amber','badge-purple','badge-coral'], loop.index0) }}">
+          {% set idx = loop.index0 % 5 %}
+
+          {# Hidden buy form #}
+          <form
+                  id="buy-form-{{ product.productId }}"
+                  method="POST"
+                  action="{{ path('Client_product_Buy') }}"
+                  style="display:none"
+          >
+            <input type="hidden" name="Productid" value="{{ product.productId }}">
+            <input type="hidden" name="type" id="buy-type-{{ product.productId }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('BuyProduct_') }}">
+          </form>
+
+          <div class="pl-card">
+            <div class="pl-card-top {{ strips[idx] }}"></div>
+
+            <div class="pl-card-body">
+              <div class="pl-card-icon-row">
+                <div class="pl-card-icon {{ icons[idx] }}">
+                  {{ product.category|slice(0,2)|upper }}
+                </div>
+                <div style="text-align:right">
+                <span class="pl-card-badge {{ badges[idx] }}">
                   {{ product.category|replace({'_': ' '})|title }}
                 </span>
-            </td>
-            <td class="product-price">{{ product.price|number_format(2, ',', ' ') }} DT</td>
-            <td class="product-desc" title="{{ product.description }}">{{ product.description }}</td>
-            <td class="product-date">{{ product.createdAt|date('d/m/Y') }}</td>
-            <td>
-              {# Hidden form — submitted programmatically after type selection #}
-              <form
-                      id="buy-form-{{ product.productId }}"
-                      method="POST"
-                      action="{{ path('Client_product_Buy') }}"
-                      style="display:none"
-              >
-                <input type="hidden" name="Productid" value="{{ product.productId }}">
-                <input type="hidden" name="type" id="buy-type-{{ product.productId }}">
-                <input type="hidden" name="_token" value="{{ csrf_token('BuyProduct_') }}">
-              </form>
+                  <div class="pl-card-date">{{ product.createdAt|date('d/m/Y') }}</div>
+                </div>
+              </div>
 
-              <button class="action-btn" type="button" onclick="selectType({{ product.productId }})">Acheter</button>
-            </td>
-          </tr>
+              <p class="pl-card-desc" title="{{ product.description }}">
+                {{ product.description }}
+              </p>
+            </div>
+
+            <div class="pl-card-footer">
+              <div class="pl-card-price">
+                {{ product.price|number_format(2, ',', ' ') }}<span>DT</span>
+              </div>
+              <button
+                      class="pl-buy-btn"
+                      type="button"
+                      onclick="selectType({{ product.productId }})"
+              >
+                Acheter →
+              </button>
+            </div>
+          </div>
+
         {% endfor %}
       {% endif %}
-      </tbody>
-    </table>
 
-    {# ── Footer count ── #}
-    <div class="footer-info">
-      Total : {{ products|length }} produit{{ products|length != 1 ? 's' : '' }}
     </div>
-
   </div>
-</div>
 
-<script>
-  function selectType(productId) {
-    Swal.fire({
-      title: "Type d'abonnement",
-      text: "Choisissez le type d'abonnement pour ce produit :",
-      input: 'select',
-      inputOptions: {
-        'MONTHLY':     'Mensuel',
-        'ANNUALLY':    'Annuel',
-        'TRANSACTION': 'Par transaction',
-        'ONE_TIME':    'Paiement unique'
-      },
-      inputPlaceholder: 'Sélectionner un type',
-      showCancelButton: true,
-      confirmButtonText: 'Confirmer',
-      cancelButtonText: 'Annuler',
-      inputValidator: (value) => {
-        if (!value) return 'Veuillez sélectionner un type.';
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        document.getElementById('buy-type-' + productId).value = result.value;
-        document.getElementById('buy-form-' + productId).submit();
-      }
+  {# ── Consume flashes ── #}
+  {% set flashSuccesses = app.flashes('success') %}
+  {% set flashErrors    = app.flashes('error') %}
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="{{ asset('js/Product/ScriptProduct.js') }}" defer></script>
+
+  <script>
+    {% if flashSuccesses is not empty %}
+    window.addEventListener('load', function () {
+      Swal.fire({
+        icon: 'success',
+        title: '{{ flashSuccesses|first|e('js') }}',
+        showConfirmButton: false,
+        timer: 2500,
+        timerProgressBar: true,
+        background: '#151820',
+        color: '#f0f2f8',
+        iconColor: '#22c97a'
+      });
     });
-  }
-</script>
+    {% endif %}
 
-<script src="{{ asset('js/Product/ScriptProduct.js') }}" defer></script>
-</body>
-</html>
+    {% if flashErrors is not empty %}
+    window.addEventListener('load', function () {
+      Swal.fire({
+        icon: 'error',
+        title: '{{ flashErrors|first|e('js') }}',
+        showConfirmButton: true,
+        background: '#151820',
+        color: '#f0f2f8'
+      });
+    });
+    {% endif %}
+
+    function selectType(productId) {
+      Swal.fire({
+        title: "Type d'abonnement",
+        text: "Choisissez le type d'abonnement pour ce produit :",
+        input: 'select',
+        inputOptions: {
+          'MONTHLY':     'Mensuel',
+          'ANNUALLY':    'Annuel',
+          'TRANSACTION': 'Par transaction',
+          'ONE_TIME':    'Paiement unique'
+        },
+        inputPlaceholder: 'Sélectionner un type',
+        showCancelButton: true,
+        confirmButtonText: 'Confirmer',
+        cancelButtonText: 'Annuler',
+        background: '#151820',
+        color: '#f0f2f8',
+        confirmButtonColor: '#3d7fff',
+        inputValidator: (value) => {
+          if (!value) return 'Veuillez sélectionner un type.';
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          document.getElementById('buy-type-' + productId).value = result.value;
+          document.getElementById('buy-form-' + productId).submit();
+        }
+      });
+    }
+  </script>
+
+{% endblock %}

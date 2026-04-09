@@ -21,8 +21,8 @@ final class ClientSubscriptionController extends AbstractController
         Request $request,
         ProductSubscriptionRepository $subscriptionRepo
     ): Response {
-
-        $clientId     = $request->query->getInt('clientId', ); // new filter
+        $user = $this->getUser();
+        $clientId     = $user->getId(); // new filter
         $typeFilter   = $request->query->get('type', '');
         $statusFilter = $request->query->get('status', '');
         $search       = trim($request->query->get('search', ''));
