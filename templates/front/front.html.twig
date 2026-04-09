@@ -53,8 +53,20 @@
             </li>
 
             <li class="nav-item">
-              <a class="nav-link ft-app-link {% if app.request.attributes.get('_route') == 'front_module' and app.request.attributes.get('slug') == 'wallet' %}active{% endif %}" href="{{ app.user.kycApproved ? path('front_module', {slug: 'wallet'}) : path('front_kyc_status') }}">
+              <a class="nav-link ft-app-link {% if app.request.attributes.get('_route') starts with 'front_wallet_' and app.request.attributes.get('_route') not in ['front_wallet_transactions', 'front_wallet_cheques', 'front_wallet_cheque_request'] %}active{% endif %}" href="{{ app.user.kycApproved ? path('front_wallet_dashboard') : path('front_kyc_status') }}">
                 <i class="bi bi-wallet2 me-1"></i>Wallet
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link ft-app-link {% if app.request.attributes.get('_route') == 'front_wallet_transactions' %}active{% endif %}" href="{{ app.user.kycApproved ? path('front_wallet_transactions') : path('front_kyc_status') }}">
+                <i class="bi bi-arrow-left-right me-1"></i>Transactions
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link ft-app-link {% if app.request.attributes.get('_route') in ['front_wallet_cheques', 'front_wallet_cheque_request'] %}active{% endif %}" href="{{ app.user.kycApproved ? path('front_wallet_cheques') : path('front_kyc_status') }}">
+                <i class="bi bi-journal-check me-1"></i>Cheques
               </a>
             </li>
 
@@ -135,8 +147,18 @@
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item py-2" href="{{ app.user.kycApproved ? path('front_module', {slug: 'wallet'}) : path('front_kyc_status') }}">
+                  <a class="dropdown-item py-2" href="{{ app.user.kycApproved ? path('front_wallet_dashboard') : path('front_kyc_status') }}">
                     <i class="bi bi-wallet2 me-2 text-primary"></i>Wallet
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" href="{{ app.user.kycApproved ? path('front_wallet_transactions') : path('front_kyc_status') }}">
+                    <i class="bi bi-arrow-left-right me-2 text-primary"></i>Transactions
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item py-2" href="{{ app.user.kycApproved ? path('front_wallet_cheques') : path('front_kyc_status') }}">
+                    <i class="bi bi-journal-check me-2 text-primary"></i>Cheques
                   </a>
                 </li>
                 <li>
@@ -193,12 +215,13 @@
   {% endif %}
 
   {# ---- FLASH MESSAGES ---- #}
-  {% if app.flashes|length > 0 %}
-    <div class="position-fixed top-0 end-0 p-3" style="z-index:1100;margin-top:70px">
-      {% for type, messages in app.flashes %}
+  {% set flashMessages = app.flashes %}
+  {% if flashMessages is not empty %}
+    <div class="position-fixed top-0 end-0 p-3 ft-toast-container" role="region" aria-label="Notifications flottantes">
+      {% for type, messages in flashMessages %}
         {% set bsType = type == 'error' ? 'danger' : type %}
         {% for message in messages %}
-          <div class="toast align-items-center text-bg-{{ bsType }} border-0 show mb-2" role="alert">
+          <div class="toast align-items-center text-bg-{{ bsType }} border-0 show mb-2 ft-toast" role="alert">
             <div class="d-flex">
               <div class="toast-body fw-semibold">
                 {% if type == 'success' %}<i class="bi bi-check-circle me-2"></i>
@@ -207,7 +230,7 @@
                 {% else %}<i class="bi bi-info-circle me-2"></i>{% endif %}
                 {{ message }}
               </div>
-              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+              <button type="button" class="btn-close btn-close-white me-2 m-auto ft-toast-close" data-bs-dismiss="toast"></button>
             </div>
           </div>
         {% endfor %}

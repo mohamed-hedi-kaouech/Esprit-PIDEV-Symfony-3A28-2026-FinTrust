@@ -550,7 +550,26 @@ body.ft-theme-dark .ft-theme-pill.active {
 }
 
 /* ---- Toast container ---- */
-.ft-toast-container { max-width: 380px; }
+.ft-toast-container {
+  z-index: 1100;
+  margin-top: 70px;
+  width: auto;
+  max-width: min(380px, calc(100vw - 1.5rem));
+  pointer-events: none;
+}
+
+.ft-toast-container:empty {
+  display: none;
+}
+
+.ft-toast {
+  width: 100%;
+  pointer-events: auto;
+}
+
+.ft-toast-close {
+  pointer-events: auto;
+}
 
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
@@ -1684,6 +1703,38 @@ body.ft-theme-dark .ft-theme-pill.active {
 .ft-assistant-message.user .ft-assistant-bubble {
   background: linear-gradient(135deg, #1a73e8, #1560BD);
   color: #fff;
+}
+
+.ft-wallet-kpi-card {
+  height: 100%;
+}
+
+.ft-wallet-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+
+.ft-wallet-toolbar .btn {
+  border-radius: 999px;
+}
+
+.ft-wallet-empty {
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.ft-wallet-empty-icon {
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 1rem;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  color: #2563eb;
+  font-size: 2rem;
 }
 
 .ft-assistant-form {

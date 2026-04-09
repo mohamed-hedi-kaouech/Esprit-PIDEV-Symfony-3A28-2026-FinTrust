@@ -291,6 +291,10 @@ class ClientController extends AbstractController
             return $redirect;
         }
 
+        if ($slug === 'wallet') {
+            return $this->redirectToRoute('front_wallet_dashboard');
+        }
+
         return $this->render('front/client/module.html.twig', [
             'module' => self::FRONT_MODULES[$slug],
         ]);
