@@ -23,8 +23,8 @@ class WalletTransactionType extends AbstractType
                 'choices' => [
                     'Depot' => 'depot',
                     'Retrait' => 'retrait',
-                    'Transfert' => 'transfert',
                 ],
+                'required' => true,
                 'constraints' => [
                     new NotBlank(['message' => 'Le type de transaction est obligatoire.']),
                 ],
@@ -33,6 +33,7 @@ class WalletTransactionType extends AbstractType
             ->add('montant', NumberType::class, [
                 'label' => 'Montant',
                 'scale' => 2,
+                'required' => true,
                 'constraints' => [
                     new NotBlank(['message' => 'Le montant est obligatoire.']),
                     new Positive(['message' => 'Le montant doit etre superieur a zero.']),
@@ -41,6 +42,8 @@ class WalletTransactionType extends AbstractType
                     'placeholder' => '0.00',
                     'step' => '0.01',
                     'min' => '0.01',
+                    'required' => true,
+                    'inputmode' => 'decimal',
                 ],
             ])
             ->add('description', TextareaType::class, [
@@ -55,7 +58,7 @@ class WalletTransactionType extends AbstractType
                 'attr' => [
                     'rows' => 4,
                     'maxlength' => 500,
-                    'placeholder' => 'Ex: Depot initial, retrait DAB, transfert vers un tiers...',
+                    'placeholder' => 'Ex: Depot initial, retrait DAB...',
                 ],
             ]);
     }

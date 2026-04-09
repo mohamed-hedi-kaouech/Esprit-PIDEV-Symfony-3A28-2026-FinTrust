@@ -178,6 +178,42 @@
       </div>
 
       <div class="col-xl-5">
+        <div class="ft-app-card ft-premium-card mb-4">
+          <div class="ft-app-card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-bell me-2 text-primary"></i>Notifications de transfert</span>
+            <a href="{{ path('front_notifications') }}" class="ft-inline-link">Centre complet</a>
+          </div>
+          <div class="ft-app-card-body p-0">
+            {% if transferNotifications is empty %}
+              <div class="p-4 text-muted">Aucune notification de transfert disponible.</div>
+            {% else %}
+              <div class="list-group list-group-flush">
+                {% for notification in transferNotifications %}
+                  <div class="list-group-item px-4 py-3">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                      <div>
+                        <div class="fw-semibold mb-1">Transfert recu</div>
+                        <div class="text-muted small">{{ notification.message }}</div>
+                      </div>
+                      <div class="text-end">
+                        <span class="badge {{ notification.read ? 'ft-badge-neutral' : 'ft-badge-success' }}">
+                          {{ notification.read ? 'Lue' : 'Non lue' }}
+                        </span>
+                        <div class="text-muted small mt-2">{{ notification.createdAt|date('d/m/Y H:i') }}</div>
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+          {% if transferNotificationCount > 0 %}
+            <div class="ft-app-card-body border-top py-3">
+              <span class="badge ft-badge-blue">{{ transferNotificationCount }} non lue{{ transferNotificationCount > 1 ? 's' : '' }}</span>
+            </div>
+          {% endif %}
+        </div>
+
         <div class="ft-app-card ft-premium-card h-100">
           <div class="ft-app-card-header d-flex justify-content-between align-items-center">
             <span><i class="bi bi-journal-check me-2 text-primary"></i>Cheques lies</span>

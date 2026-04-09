@@ -6,6 +6,8 @@ use App\Entity\User\User;
 use App\Entity\Wallet\Cheque;
 use App\Entity\Wallet\Transaction;
 use App\Entity\Wallet\Wallet;
+use App\Service\NotificationService;
+use App\Service\WalletAuditService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -15,19 +17,16 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-/**
- * Controleur Admin - Gestion des wallets (BackOffice)
- *
- * Liste, detail, creation, modification, suppression,
- * blocage, deblocage et export CSV des wallets.
- */
 #[IsGranted('ROLE_ADMIN')]
 #[Route('/admin/wallet', name: 'admin_wallet_')]
 class AdminWalletController extends AbstractController
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-    ) {}
+        private readonly NotificationService $notificationService,
+        private readonly WalletAuditService $walletAuditService,
+    ) {
+    }
 
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(Request $request): Response
@@ -42,27 +41,11 @@ class AdminWalletController extends AbstractController
 
         $walletRepository = $this->entityManager->getRepository(Wallet::class);
         $overview = [
-            'total' => (int) $walletRepository->createQueryBuilder('w')
-                ->select('COUNT(w.idWallet)')
-                ->getQuery()
-                ->getSingleScalarResult(),
-            'active' => (int) $walletRepository->createQueryBuilder('w')
-                ->select('COUNT(w.idWallet)')
-                ->andWhere('w.estActif = :active')
-                ->setParameter('active', true)
-                ->getQuery()
-                ->getSingleScalarResult(),
-            'blocked' => (int) $walletRepository->createQueryBuilder('w')
-                ->select('COUNT(w.idWallet)')
-                ->andWhere('w.estBloque = :blocked')
-                ->setParameter('blocked', true)
-                ->getQuery()
-                ->getSingleScalarResult(),
-            'linked' => (int) $walletRepository->createQueryBuilder('w')
-                ->select('COUNT(w.idWallet)')
-                ->andWhere('w.idUser IS NOT NULL')
-                ->getQuery()
-                ->getSingleScalarResult(),
+            'total' => (int) $walletRepository->createQueryBuilder('w')->select('COUNT(w.idWallet)')->getQuery()->getSingleScalarResult(),
+            'active' => (int) $walletRepository->createQueryBuilder('w')->select('COUNT(w.idWallet)')->andWhere('w.estActif = :active')->setParameter('active', true)->getQuery()->getSingleScalarResult(),
+            'blocked' => (int) $walletRepository->createQueryBuilder('w')->select('COUNT(w.idWallet)')->andWhere('w.estBloque = :blocked')->setParameter('blocked', true)->getQuery()->getSingleScalarResult(),
+            'linked' => (int) $walletRepository->createQueryBuilder('w')->select('COUNT(w.idWallet)')->andWhere('w.idUser IS NOT NULL')->getQuery()->getSingleScalarResult(),
+            'suspended' => (int) $walletRepository->createQueryBuilder('w')->select('COUNT(w.idWallet)')->andWhere('LOWER(w.statut) = :status')->setParameter('status', 'suspendu')->getQuery()->getSingleScalarResult(),
         ];
 
         $devises = array_map(
@@ -90,73 +73,25 @@ class AdminWalletController extends AbstractController
         $chequeRepository = $this->entityManager->getRepository(Cheque::class);
 
         $stats = [
-            'walletsTotal' => (int) $walletRepository->createQueryBuilder('w')
-                ->select('COUNT(w.idWallet)')
-                ->getQuery()
-                ->getSingleScalarResult(),
-            'walletsActive' => (int) $walletRepository->createQueryBuilder('w')
-                ->select('COUNT(w.idWallet)')
-                ->andWhere('w.estActif = :active')
-                ->setParameter('active', true)
-                ->getQuery()
-                ->getSingleScalarResult(),
-            'walletsBlocked' => (int) $walletRepository->createQueryBuilder('w')
-                ->select('COUNT(w.idWallet)')
-                ->andWhere('w.estBloque = :blocked')
-                ->setParameter('blocked', true)
-                ->getQuery()
-                ->getSingleScalarResult(),
-            'transactionsTotal' => (int) $transactionRepository->createQueryBuilder('t')
-                ->select('COUNT(t.idTransaction)')
-                ->getQuery()
-                ->getSingleScalarResult(),
-            'chequesTotal' => (int) $chequeRepository->createQueryBuilder('c')
-                ->select('COUNT(c.idCheque)')
-                ->getQuery()
-                ->getSingleScalarResult(),
-            'chequesPending' => (int) $chequeRepository->createQueryBuilder('c')
-                ->select('COUNT(c.idCheque)')
-                ->andWhere('LOWER(c.statut) = :statut')
-                ->setParameter('statut', 'en_attente')
-                ->getQuery()
-                ->getSingleScalarResult(),
-            'chequesAccepted' => (int) $chequeRepository->createQueryBuilder('c')
-                ->select('COUNT(c.idCheque)')
-                ->andWhere('LOWER(c.statut) = :statut')
-                ->setParameter('statut', 'accepte')
-                ->getQuery()
-                ->getSingleScalarResult(),
-            'chequesRefused' => (int) $chequeRepository->createQueryBuilder('c')
-                ->select('COUNT(c.idCheque)')
-                ->andWhere('LOWER(c.statut) = :statut')
-                ->setParameter('statut', 'refuse')
-                ->getQuery()
-                ->getSingleScalarResult(),
+            'walletsTotal' => (int) $walletRepository->createQueryBuilder('w')->select('COUNT(w.idWallet)')->getQuery()->getSingleScalarResult(),
+            'walletsActive' => (int) $walletRepository->createQueryBuilder('w')->select('COUNT(w.idWallet)')->andWhere('w.estActif = :active')->setParameter('active', true)->getQuery()->getSingleScalarResult(),
+            'walletsBlocked' => (int) $walletRepository->createQueryBuilder('w')->select('COUNT(w.idWallet)')->andWhere('w.estBloque = :blocked')->setParameter('blocked', true)->getQuery()->getSingleScalarResult(),
+            'walletsSuspended' => (int) $walletRepository->createQueryBuilder('w')->select('COUNT(w.idWallet)')->andWhere('LOWER(w.statut) = :status')->setParameter('status', 'suspendu')->getQuery()->getSingleScalarResult(),
+            'transactionsTotal' => (int) $transactionRepository->createQueryBuilder('t')->select('COUNT(t.idTransaction)')->getQuery()->getSingleScalarResult(),
+            'transfersTotal' => (int) $transactionRepository->createQueryBuilder('t')->select('COUNT(t.idTransaction)')->andWhere('LOWER(t.type) = :type')->setParameter('type', 'transfert')->getQuery()->getSingleScalarResult(),
+            'chequesTotal' => (int) $chequeRepository->createQueryBuilder('c')->select('COUNT(c.idCheque)')->getQuery()->getSingleScalarResult(),
+            'chequesPending' => (int) $chequeRepository->createQueryBuilder('c')->select('COUNT(c.idCheque)')->andWhere('LOWER(c.statut) = :statut')->setParameter('statut', 'en_attente')->getQuery()->getSingleScalarResult(),
+            'chequesAccepted' => (int) $chequeRepository->createQueryBuilder('c')->select('COUNT(c.idCheque)')->andWhere('LOWER(c.statut) = :statut')->setParameter('statut', 'accepte')->getQuery()->getSingleScalarResult(),
+            'chequesRefused' => (int) $chequeRepository->createQueryBuilder('c')->select('COUNT(c.idCheque)')->andWhere('LOWER(c.statut) = :statut')->setParameter('statut', 'refuse')->getQuery()->getSingleScalarResult(),
+            'chequesDelivered' => (int) $chequeRepository->createQueryBuilder('c')->select('COUNT(c.idCheque)')->andWhere('LOWER(c.statut) = :statut')->setParameter('statut', 'livre')->getQuery()->getSingleScalarResult(),
         ];
 
         /** @var Wallet[] $latestWallets */
-        $latestWallets = $walletRepository->createQueryBuilder('w')
-            ->orderBy('w.dateCreation', 'DESC')
-            ->setMaxResults(8)
-            ->getQuery()
-            ->getResult();
-
+        $latestWallets = $walletRepository->createQueryBuilder('w')->orderBy('w.dateCreation', 'DESC')->setMaxResults(8)->getQuery()->getResult();
         /** @var Cheque[] $latestCheques */
-        $latestCheques = $chequeRepository->createQueryBuilder('c')
-            ->leftJoin('c.wallet', 'w')->addSelect('w')
-            ->orderBy('c.dateEmission', 'DESC')
-            ->setMaxResults(8)
-            ->getQuery()
-            ->getResult();
-
+        $latestCheques = $chequeRepository->createQueryBuilder('c')->leftJoin('c.wallet', 'w')->addSelect('w')->orderBy('c.dateEmission', 'DESC')->setMaxResults(8)->getQuery()->getResult();
         /** @var Wallet[] $blockedWallets */
-        $blockedWallets = $walletRepository->createQueryBuilder('w')
-            ->andWhere('w.estBloque = :blocked')
-            ->setParameter('blocked', true)
-            ->orderBy('w.dateCreation', 'DESC')
-            ->setMaxResults(8)
-            ->getQuery()
-            ->getResult();
+        $blockedWallets = $walletRepository->createQueryBuilder('w')->andWhere('w.estBloque = :blocked')->setParameter('blocked', true)->orderBy('w.dateCreation', 'DESC')->setMaxResults(8)->getQuery()->getResult();
 
         $topActiveWalletRows = $transactionRepository->createQueryBuilder('t')
             ->select('IDENTITY(t.wallet) AS walletId, COUNT(t.idTransaction) AS txCount, SUM(t.montant) AS totalAmount')
@@ -180,21 +115,13 @@ class AdminWalletController extends AbstractController
         }
 
         /** @var Wallet[] $allWalletsForChart */
-        $allWalletsForChart = $walletRepository->createQueryBuilder('w')
-            ->orderBy('w.dateCreation', 'ASC')
-            ->getQuery()
-            ->getResult();
-
+        $allWalletsForChart = $walletRepository->createQueryBuilder('w')->orderBy('w.dateCreation', 'ASC')->getQuery()->getResult();
         $monthlyMap = [];
         $cursor = new \DateTimeImmutable('first day of this month -5 months');
         for ($i = 0; $i < 6; $i++) {
-            $monthlyMap[$cursor->format('Y-m')] = [
-                'label' => $cursor->format('M Y'),
-                'count' => 0,
-            ];
+            $monthlyMap[$cursor->format('Y-m')] = ['label' => $cursor->format('M Y'), 'count' => 0];
             $cursor = $cursor->modify('+1 month');
         }
-
         foreach ($allWalletsForChart as $wallet) {
             $key = $wallet->getDateCreation()->format('Y-m');
             if (isset($monthlyMap[$key])) {
@@ -209,6 +136,15 @@ class AdminWalletController extends AbstractController
             'blockedWallets' => $blockedWallets,
             'topActiveWallets' => $topActiveWallets,
             'walletsByMonth' => array_values($monthlyMap),
+            'auditEntries' => $this->walletAuditService->getRecentEntries(12),
+        ]);
+    }
+
+    #[Route('/audit', name: 'audit', methods: ['GET'])]
+    public function audit(): Response
+    {
+        return $this->render('admin/wallet/audit.html.twig', [
+            'entries' => $this->walletAuditService->getRecentEntries(150),
         ]);
     }
 
@@ -218,28 +154,12 @@ class AdminWalletController extends AbstractController
         $filters = $this->getWalletFilters($request);
 
         /** @var Wallet[] $wallets */
-        $wallets = $this->createWalletListQueryBuilder($filters)
-            ->orderBy('w.dateCreation', 'DESC')
-            ->getQuery()
-            ->getResult();
+        $wallets = $this->createWalletListQueryBuilder($filters)->orderBy('w.dateCreation', 'DESC')->getQuery()->getResult();
 
         $response = new StreamedResponse(function () use ($wallets) {
             $handle = fopen('php://output', 'w');
             fwrite($handle, "\xEF\xBB\xBF");
-
-            fputcsv($handle, [
-                'idWallet',
-                'nomProprietaire',
-                'email',
-                'telephone',
-                'solde',
-                'devise',
-                'statut',
-                'estActif',
-                'estBloque',
-                'dateCreation',
-            ], ';');
-
+            fputcsv($handle, ['idWallet', 'nomProprietaire', 'email', 'telephone', 'solde', 'devise', 'statut', 'estActif', 'estBloque', 'dateCreation'], ';');
             foreach ($wallets as $wallet) {
                 fputcsv($handle, [
                     $wallet->getIdWallet(),
@@ -254,7 +174,6 @@ class AdminWalletController extends AbstractController
                     $wallet->getDateCreation()->format('d/m/Y H:i'),
                 ], ';');
             }
-
             fclose($handle);
         });
 
@@ -262,43 +181,6 @@ class AdminWalletController extends AbstractController
         $response->headers->set('Content-Disposition', 'attachment; filename="fintrust_wallets_' . date('Ymd_His') . '.csv"');
 
         return $response;
-    }
-
-    #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
-    public function new(Request $request): Response
-    {
-        $wallet = new Wallet();
-        $wallet
-            ->setNomProprietaire('')
-            ->setSolde('0.00')
-            ->setDevise('TND')
-            ->setStatut('actif')
-            ->setEstActif(true)
-            ->setEstBloque(false)
-            ->setPlafondDecouvert('0.00');
-
-        if ($request->isMethod('POST')) {
-            $this->hydrateWalletFromRequest($wallet, $request);
-
-            if ($error = $this->validateWallet($wallet)) {
-                $this->addFlash('error', $error);
-            } else {
-                $wallet->setDateCreation(new \DateTime());
-                $this->entityManager->persist($wallet);
-                $this->entityManager->flush();
-
-                $this->addFlash('success', 'Le wallet a ete cree avec succes.');
-
-                return $this->redirectToRoute('admin_wallet_index');
-            }
-        }
-
-        return $this->render('admin/wallet/form.html.twig', [
-            'wallet' => $wallet,
-            'clients' => $this->getWalletClients(),
-            'selectedUserId' => $wallet->getIdUser(),
-            'isEdit' => false,
-        ]);
     }
 
     #[Route('/{id}', name: 'show', methods: ['GET'], requirements: ['id' => '\d+'])]
@@ -332,7 +214,6 @@ class AdminWalletController extends AbstractController
 
         foreach ($wallet->getTransactions() as $transaction) {
             $type = mb_strtolower($transaction->getType());
-
             if ($type === 'depot') {
                 $transactionStats['depotCount']++;
                 $transactionStats['depotAmount'] += $transaction->getMontant();
@@ -360,6 +241,61 @@ class AdminWalletController extends AbstractController
             'latestTransactions' => $latestTransactions,
             'transactionStats' => $transactionStats,
             'latestCheques' => $latestCheques,
+            'auditEntries' => $this->walletAuditService->getRecentEntries(20, $wallet->getIdUser()),
+        ]);
+    }
+
+    #[Route('/{id}/block', name: 'block', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function block(int $id, Request $request): Response
+    {
+        return $this->applyWalletStatus($id, $request, 'bloque', false, true, 'wallet_block_');
+    }
+
+    #[Route('/{id}/unblock', name: 'unblock', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function unblock(int $id, Request $request): Response
+    {
+        return $this->applyWalletStatus($id, $request, 'actif', true, false, 'wallet_unblock_');
+    }
+
+    #[Route('/{id}/suspend', name: 'suspend', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function suspend(int $id, Request $request): Response
+    {
+        return $this->applyWalletStatus($id, $request, 'suspendu', false, false, 'wallet_suspend_');
+    }
+
+    #[Route('/{id}/activate', name: 'activate', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function activate(int $id, Request $request): Response
+    {
+        return $this->applyWalletStatus($id, $request, 'actif', true, false, 'wallet_activate_');
+    }
+
+    #[Route('/nouveau', name: 'new', methods: ['GET', 'POST'])]
+    public function new(Request $request): Response
+    {
+        $wallet = new Wallet();
+        $wallet->setNomProprietaire('')->setSolde('0.00')->setDevise('TND')->setStatut('actif')->setEstActif(true)->setEstBloque(false)->setPlafondDecouvert('0.00');
+
+        if ($request->isMethod('POST')) {
+            $this->hydrateWalletFromRequest($wallet, $request);
+
+            if ($error = $this->validateWallet($wallet)) {
+                $this->addFlash('error', $error);
+            } else {
+                $wallet->setDateCreation(new \DateTime());
+                $this->entityManager->persist($wallet);
+                $this->entityManager->flush();
+                $this->walletAuditService->logWalletStatusChange($wallet->getIdWallet(), $wallet->getIdUser(), $wallet->getStatut(), (bool) $wallet->getEstActif(), (bool) $wallet->getEstBloque());
+                $this->addFlash('success', 'Le wallet a ete cree avec succes.');
+
+                return $this->redirectToRoute('admin_wallet_index');
+            }
+        }
+
+        return $this->render('admin/wallet/form.html.twig', [
+            'wallet' => $wallet,
+            'clients' => $this->getWalletClients(),
+            'selectedUserId' => $wallet->getIdUser(),
+            'isEdit' => false,
         ]);
     }
 
@@ -368,10 +304,11 @@ class AdminWalletController extends AbstractController
     {
         /** @var Wallet|null $wallet */
         $wallet = $this->entityManager->getRepository(Wallet::class)->find($id);
-
         if (!$wallet) {
             throw $this->createNotFoundException('Wallet introuvable.');
         }
+
+        $previousStatus = $wallet->getStatut();
 
         if ($request->isMethod('POST')) {
             $this->hydrateWalletFromRequest($wallet, $request);
@@ -380,7 +317,10 @@ class AdminWalletController extends AbstractController
                 $this->addFlash('error', $error);
             } else {
                 $this->entityManager->flush();
-
+                if ($previousStatus !== $wallet->getStatut()) {
+                    $this->notifyWalletUser($wallet);
+                    $this->walletAuditService->logWalletStatusChange($wallet->getIdWallet(), $wallet->getIdUser(), $wallet->getStatut(), (bool) $wallet->getEstActif(), (bool) $wallet->getEstBloque());
+                }
                 $this->addFlash('success', 'Le wallet a ete mis a jour avec succes.');
 
                 return $this->redirectToRoute('admin_wallet_show', ['id' => $wallet->getIdWallet()]);
@@ -395,72 +335,11 @@ class AdminWalletController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/block', name: 'block', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function block(int $id, Request $request): Response
-    {
-        /** @var Wallet|null $wallet */
-        $wallet = $this->entityManager->getRepository(Wallet::class)->find($id);
-
-        if (!$wallet) {
-            throw $this->createNotFoundException('Wallet introuvable.');
-        }
-
-        if (!$this->isCsrfTokenValid('wallet_block_' . $wallet->getIdWallet(), (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-            return $this->redirectToRoute('admin_wallet_index');
-        }
-
-        $wallet->setEstBloque(true);
-        $wallet->setEstActif(false);
-        $wallet->setStatut('bloque');
-
-        $this->entityManager->flush();
-
-        $this->addFlash('success', sprintf(
-            'Le wallet #%d de %s a ete bloque avec succes.',
-            $wallet->getIdWallet(),
-            $wallet->getNomProprietaire()
-        ));
-
-        return $this->redirectToRoute('admin_wallet_index');
-    }
-
-    #[Route('/{id}/unblock', name: 'unblock', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function unblock(int $id, Request $request): Response
-    {
-        /** @var Wallet|null $wallet */
-        $wallet = $this->entityManager->getRepository(Wallet::class)->find($id);
-
-        if (!$wallet) {
-            throw $this->createNotFoundException('Wallet introuvable.');
-        }
-
-        if (!$this->isCsrfTokenValid('wallet_unblock_' . $wallet->getIdWallet(), (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token CSRF invalide.');
-            return $this->redirectToRoute('admin_wallet_index');
-        }
-
-        $wallet->setEstBloque(false);
-        $wallet->setEstActif(true);
-        $wallet->setStatut('actif');
-
-        $this->entityManager->flush();
-
-        $this->addFlash('success', sprintf(
-            'Le wallet #%d de %s a ete debloque avec succes.',
-            $wallet->getIdWallet(),
-            $wallet->getNomProprietaire()
-        ));
-
-        return $this->redirectToRoute('admin_wallet_index');
-    }
-
     #[Route('/{id}/supprimer', name: 'delete', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function delete(int $id, Request $request): Response
     {
         /** @var Wallet|null $wallet */
         $wallet = $this->entityManager->getRepository(Wallet::class)->find($id);
-
         if (!$wallet) {
             throw $this->createNotFoundException('Wallet introuvable.');
         }
@@ -472,6 +351,11 @@ class AdminWalletController extends AbstractController
 
         $this->entityManager->remove($wallet);
         $this->entityManager->flush();
+
+        $this->walletAuditService->log('wallet.deleted', [
+            'wallet_id' => $wallet->getIdWallet(),
+            'user_id' => $wallet->getIdUser(),
+        ]);
 
         $this->addFlash('success', 'Le wallet a ete supprime avec succes.');
 
@@ -513,29 +397,17 @@ class AdminWalletController extends AbstractController
     private function createWalletListQueryBuilder(array $filters): QueryBuilder
     {
         $qb = $this->entityManager->getRepository(Wallet::class)->createQueryBuilder('w');
-
         if ($filters['search'] !== '') {
-            $qb
-                ->andWhere('LOWER(w.nomProprietaire) LIKE :search OR LOWER(w.email) LIKE :search')
-                ->setParameter('search', '%' . mb_strtolower($filters['search']) . '%');
+            $qb->andWhere('LOWER(w.nomProprietaire) LIKE :search OR LOWER(w.email) LIKE :search')->setParameter('search', '%' . mb_strtolower($filters['search']) . '%');
         }
-
         if ($filters['statut'] !== '') {
-            $qb
-                ->andWhere('w.statut = :statut')
-                ->setParameter('statut', $filters['statut']);
+            $qb->andWhere('w.statut = :statut')->setParameter('statut', $filters['statut']);
         }
-
         if ($filters['blocked'] !== '') {
-            $qb
-                ->andWhere('w.estBloque = :blocked')
-                ->setParameter('blocked', $filters['blocked'] === '1');
+            $qb->andWhere('w.estBloque = :blocked')->setParameter('blocked', $filters['blocked'] === '1');
         }
-
         if ($filters['devise'] !== '') {
-            $qb
-                ->andWhere('w.devise = :devise')
-                ->setParameter('devise', $filters['devise']);
+            $qb->andWhere('w.devise = :devise')->setParameter('devise', $filters['devise']);
         }
 
         return $qb;
@@ -545,7 +417,6 @@ class AdminWalletController extends AbstractController
     {
         $selectedUserId = $request->request->get('id_user');
         $selectedUserId = $selectedUserId !== null && $selectedUserId !== '' ? (int) $selectedUserId : null;
-
         $user = null;
         if ($selectedUserId !== null) {
             $user = $this->entityManager->getRepository(User::class)->find($selectedUserId);
@@ -557,7 +428,6 @@ class AdminWalletController extends AbstractController
 
         if ($user instanceof User) {
             $wallet->setIdUser($user->getId());
-
             if ($nomProprietaire === '') {
                 $nomProprietaire = $user->getFullName();
             }
@@ -595,11 +465,9 @@ class AdminWalletController extends AbstractController
         if (trim($wallet->getNomProprietaire()) === '') {
             return 'Le nom du proprietaire est obligatoire.';
         }
-
         if ($wallet->getEmail() !== null && $wallet->getEmail() !== '' && !filter_var($wallet->getEmail(), FILTER_VALIDATE_EMAIL)) {
             return 'L adresse email du wallet est invalide.';
         }
-
         if (trim($wallet->getDevise()) === '') {
             return 'La devise est obligatoire.';
         }
@@ -623,7 +491,6 @@ class AdminWalletController extends AbstractController
         if ($normalized === '') {
             return null;
         }
-
         if (!is_numeric($normalized)) {
             return '0.00';
         }
@@ -636,5 +503,44 @@ class AdminWalletController extends AbstractController
         $normalized = trim((string) $value);
 
         return $normalized !== '' ? $normalized : null;
+    }
+
+    private function applyWalletStatus(int $id, Request $request, string $status, bool $active, bool $blocked, string $tokenPrefix): Response
+    {
+        /** @var Wallet|null $wallet */
+        $wallet = $this->entityManager->getRepository(Wallet::class)->find($id);
+        if (!$wallet) {
+            throw $this->createNotFoundException('Wallet introuvable.');
+        }
+
+        if (!$this->isCsrfTokenValid($tokenPrefix . $wallet->getIdWallet(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_wallet_index');
+        }
+
+        $wallet->setEstBloque($blocked);
+        $wallet->setEstActif($active);
+        $wallet->setStatut($status);
+        $this->entityManager->flush();
+
+        $this->notifyWalletUser($wallet);
+        $this->walletAuditService->logWalletStatusChange($wallet->getIdWallet(), $wallet->getIdUser(), $status, $active, $blocked);
+
+        $this->addFlash('success', sprintf('Le wallet #%d de %s est maintenant %s.', $wallet->getIdWallet(), $wallet->getNomProprietaire(), $status));
+
+        return $this->redirectToRoute('admin_wallet_index');
+    }
+
+    private function notifyWalletUser(Wallet $wallet): void
+    {
+        if ($wallet->getIdUser() === null) {
+            return;
+        }
+
+        /** @var User|null $user */
+        $user = $this->entityManager->getRepository(User::class)->find($wallet->getIdUser());
+        if ($user instanceof User) {
+            $this->notificationService->notifyWalletStatusChanged($user, $wallet->getStatut());
+        }
     }
 }

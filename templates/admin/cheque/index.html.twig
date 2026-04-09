@@ -32,6 +32,14 @@
         }) }}" class="btn ft-btn-primary">
           <i class="bi bi-download me-2"></i>Exporter CSV
         </a>
+        <a href="{{ path('admin_cheque_export_pdf', {
+          numero: filters.numero,
+          beneficiaire: filters.beneficiaire,
+          statut: filters.statut,
+          wallet: filters.wallet
+        }) }}" class="btn ft-btn-outline-primary">
+          <i class="bi bi-file-earmark-pdf me-2"></i>Exporter PDF
+        </a>
       </div>
       <div class="ft-admin-meta justify-content-lg-end">
         <span><i class="bi bi-list-check"></i>{{ cheques|length }} cheque(s) affiche(s)</span>
@@ -61,6 +69,7 @@
           <option value="en_attente" {{ filters.statut == 'en_attente' ? 'selected' : '' }}>En attente</option>
           <option value="accepte" {{ filters.statut == 'accepte' ? 'selected' : '' }}>Accepte</option>
           <option value="refuse" {{ filters.statut == 'refuse' ? 'selected' : '' }}>Refuse</option>
+          <option value="livre" {{ filters.statut == 'livre' ? 'selected' : '' }}>Livre</option>
         </select>
       </div>
       <div class="col-md-2">
@@ -104,7 +113,7 @@
         <tbody>
           {% for cheque in cheques %}
             {% set chequeStatus = cheque.statut|lower %}
-            {% set chequeBadge = chequeStatus == 'accepte' ? 'ft-badge-success' : (chequeStatus == 'refuse' ? 'ft-badge-danger' : 'ft-badge-warning') %}
+            {% set chequeBadge = chequeStatus == 'accepte' ? 'ft-badge-success' : (chequeStatus == 'refuse' ? 'ft-badge-danger' : (chequeStatus == 'livre' ? 'ft-badge-blue' : 'ft-badge-warning')) %}
             <tr>
               <td class="fw-bold">#{{ cheque.idCheque }}</td>
               <td>{{ cheque.numeroCheque }}</td>
@@ -146,6 +155,13 @@
                     <a href="{{ path('admin_cheque_reject', {id: cheque.idCheque}) }}" class="btn btn-sm btn-outline-danger">
                       <i class="bi bi-x-circle me-1"></i>Refuser
                     </a>
+                  {% elseif chequeStatus == 'accepte' %}
+                    <form method="post" action="{{ path('admin_cheque_deliver', {id: cheque.idCheque}) }}" class="d-inline">
+                      <input type="hidden" name="_token" value="{{ csrf_token('deliver_cheque_' ~ cheque.idCheque) }}">
+                      <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-truck me-1"></i>Marquer livre
+                      </button>
+                    </form>
                   {% endif %}
                 </div>
               </td>

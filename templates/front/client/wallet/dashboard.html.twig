@@ -19,6 +19,9 @@
         <a href="{{ path('front_wallet_transactions') }}" class="btn ft-btn-outline-primary">
           <i class="bi bi-arrow-left-right me-1"></i>Transactions
         </a>
+        <a href="{{ path('front_wallet_transfer_history') }}" class="btn ft-btn-outline-primary">
+          <i class="bi bi-send me-1"></i>Transferts
+        </a>
         <a href="{{ path('front_wallet_cheques') }}" class="btn ft-btn-outline-primary">
           <i class="bi bi-receipt me-1"></i>Cheques
         </a>
@@ -72,6 +75,37 @@
                 <span class="badge ft-badge-warning">{{ wallet.statut|title }}</span>
               {% endif %}
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <div class="ft-dash-card ft-dash-card-soft h-100">
+            <div class="ft-dash-card-icon ft-dash-icon-orange"><i class="bi bi-hourglass-split"></i></div>
+            <div class="ft-dash-card-label">Cheques en attente</div>
+            <div class="ft-dash-card-value">{{ walletStats.pendingCheques }}</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="ft-dash-card ft-dash-card-soft h-100">
+            <div class="ft-dash-card-icon ft-dash-icon-green"><i class="bi bi-patch-check"></i></div>
+            <div class="ft-dash-card-label">Cheques acceptes</div>
+            <div class="ft-dash-card-value">{{ walletStats.acceptedCheques }}</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="ft-dash-card ft-dash-card-soft h-100">
+            <div class="ft-dash-card-icon ft-dash-icon-blue"><i class="bi bi-truck"></i></div>
+            <div class="ft-dash-card-label">Cheques livres</div>
+            <div class="ft-dash-card-value">{{ walletStats.deliveredCheques }}</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="ft-dash-card ft-dash-card-soft h-100">
+            <div class="ft-dash-card-icon ft-dash-icon-red"><i class="bi bi-bell"></i></div>
+            <div class="ft-dash-card-label">Notifications wallet</div>
+            <div class="ft-dash-card-value">{{ walletNotifications|length }}</div>
           </div>
         </div>
       </div>
@@ -146,15 +180,67 @@
                   <i class="bi bi-arrow-left-right"></i>
                   <span>Historique</span>
                 </a>
+                <a href="{{ path('front_wallet_transfer_new') }}" class="ft-shortcut-tile">
+                  <i class="bi bi-send"></i>
+                  <span>Transferer</span>
+                </a>
                 <a href="{{ path('front_wallet_cheques') }}" class="ft-shortcut-tile">
                   <i class="bi bi-journal-text"></i>
                   <span>Mes cheques</span>
+                </a>
+                <a href="{{ path('front_wallet_transfer_history') }}" class="ft-shortcut-tile">
+                  <i class="bi bi-clock-history"></i>
+                  <span>Transferts</span>
                 </a>
                 <a href="{{ path('front_wallet_cheque_request') }}" class="ft-shortcut-tile">
                   <i class="bi bi-journal-plus"></i>
                   <span>Nouvelle demande</span>
                 </a>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-4 mb-4">
+        <div class="col-xl-7">
+          <div class="ft-app-card ft-premium-card h-100">
+            <div class="ft-app-card-header d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-graph-up-arrow me-2 text-primary"></i>Tendance recente</span>
+              <span class="badge ft-badge-blue">{{ walletStats.statusLabel }}</span>
+            </div>
+            <div class="ft-app-card-body">
+              <div style="height: 280px;">
+                <canvas id="walletFlowChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-5">
+          <div class="ft-app-card ft-premium-card h-100">
+            <div class="ft-app-card-header d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-shield-check me-2 text-primary"></i>Audit recent</span>
+              <a href="{{ path('front_notifications') }}" class="ft-inline-link">Centre de notifications</a>
+            </div>
+            <div class="ft-app-card-body p-0">
+              {% if auditEntries is empty %}
+                <div class="p-4 text-muted">Aucune action sensible recente a afficher.</div>
+              {% else %}
+                <div class="list-group list-group-flush">
+                  {% for entry in auditEntries %}
+                    <div class="list-group-item px-4 py-3">
+                      <div class="fw-semibold small">{{ entry.action }}</div>
+                      <div class="text-muted small">{{ entry.timestamp|date('d/m/Y H:i') }}</div>
+                      {% if entry.reference is defined and entry.reference %}
+                        <div class="small mt-1">Reference: {{ entry.reference }}</div>
+                      {% endif %}
+                      {% if entry.status is defined and entry.status %}
+                        <div class="small">Statut: {{ entry.status }}</div>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
             </div>
           </div>
         </div>
@@ -206,6 +292,64 @@
         </div>
 
         <div class="col-xl-5">
+          <div class="ft-app-card ft-premium-card mb-4">
+            <div class="ft-app-card-header d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-bell me-2 text-primary"></i>Transferts recus</span>
+              <a href="{{ path('front_notifications') }}" class="ft-inline-link">Notifications</a>
+            </div>
+            <div class="ft-app-card-body p-0">
+              {% if transferNotifications is empty %}
+                <div class="p-4 text-muted">Aucune notification de transfert recue pour le moment.</div>
+              {% else %}
+                <div class="list-group list-group-flush">
+                  {% for notification in transferNotifications %}
+                    <div class="list-group-item px-4 py-3">
+                      <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div>
+                          <div class="fw-semibold mb-1">Transfert recu</div>
+                          <div class="text-muted small">{{ notification.message }}</div>
+                        </div>
+                        <div class="text-end">
+                          <span class="badge {{ notification.read ? 'ft-badge-neutral' : 'ft-badge-success' }}">
+                            {{ notification.read ? 'Lue' : 'Non lue' }}
+                          </span>
+                          <div class="text-muted small mt-2">{{ notification.createdAt|date('d/m/Y H:i') }}</div>
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            {% if transferNotificationCount > 0 %}
+              <div class="ft-app-card-body border-top py-3">
+                <span class="badge ft-badge-blue">{{ transferNotificationCount }} non lue{{ transferNotificationCount > 1 ? 's' : '' }}</span>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="ft-app-card ft-premium-card mb-4">
+            <div class="ft-app-card-header d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-megaphone me-2 text-primary"></i>Notifications wallet</span>
+              <a href="{{ path('front_notifications') }}" class="ft-inline-link">Voir tout</a>
+            </div>
+            <div class="ft-app-card-body p-0">
+              {% if walletNotifications is empty %}
+                <div class="p-4 text-muted">Aucune notification wallet pour le moment.</div>
+              {% else %}
+                <div class="list-group list-group-flush">
+                  {% for notification in walletNotifications %}
+                    <div class="list-group-item px-4 py-3">
+                      <div class="fw-semibold small">{{ notification.type }}</div>
+                      <div class="text-muted small">{{ notification.message }}</div>
+                      <div class="text-muted small mt-2">{{ notification.createdAt|date('d/m/Y H:i') }}</div>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
           <div class="ft-app-card ft-premium-card h-100">
             <div class="ft-app-card-header d-flex justify-content-between align-items-center">
               <span><i class="bi bi-journal-check me-2 text-primary"></i>5 derniers cheques</span>
@@ -250,4 +394,38 @@
     {% endif %}
   </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    const walletFlowCanvas = document.getElementById('walletFlowChart');
+    if (walletFlowCanvas) {
+      new Chart(walletFlowCanvas, {
+        type: 'line',
+        data: {
+          labels: {{ walletChart.labels|json_encode|raw }},
+          datasets: [{
+            label: 'Flux',
+            data: {{ walletChart.values|json_encode|raw }},
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37,99,235,0.12)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(148,163,184,.15)' } },
+            x: { ticks: { color: '#64748b' }, grid: { display: false } }
+          }
+        }
+      });
+    }
+  </script>
 {% endblock %}

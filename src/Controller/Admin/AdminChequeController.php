@@ -2,8 +2,11 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\User\User;
 use App\Entity\Wallet\Cheque;
 use App\Form\Admin\ChequeRejectType;
+use App\Service\NotificationService;
+use App\Service\WalletAuditService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -19,7 +22,10 @@ class AdminChequeController extends AbstractController
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-    ) {}
+        private readonly NotificationService $notificationService,
+        private readonly WalletAuditService $walletAuditService,
+    ) {
+    }
 
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(Request $request): Response
@@ -63,6 +69,7 @@ class AdminChequeController extends AbstractController
                 'wallet',
                 'proprietaireWallet',
                 'walletBloque',
+                'motifRejet',
             ], ';');
 
             foreach ($cheques as $cheque) {
@@ -77,6 +84,7 @@ class AdminChequeController extends AbstractController
                     $wallet->getIdWallet(),
                     $wallet->getNomProprietaire(),
                     $wallet->getEstBloque() ? 'Oui' : 'Non',
+                    $cheque->getMotifRejet() ?? '',
                 ], ';');
             }
 
@@ -87,6 +95,23 @@ class AdminChequeController extends AbstractController
         $response->headers->set('Content-Disposition', 'attachment; filename="fintrust_cheques_' . date('Ymd_His') . '.csv"');
 
         return $response;
+    }
+
+    #[Route('/export/pdf', name: 'export_pdf', methods: ['GET'])]
+    public function exportPdf(Request $request): Response
+    {
+        $filters = $this->getChequeFilters($request);
+
+        /** @var Cheque[] $cheques */
+        $cheques = $this->createChequeListQueryBuilder($filters)
+            ->orderBy('c.dateEmission', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        return $this->render('admin/cheque/export_pdf.html.twig', [
+            'cheques' => $cheques,
+            'filters' => $filters,
+        ]);
     }
 
     #[Route('/{id}', name: 'show', methods: ['GET'], requirements: ['id' => '\d+'])]
@@ -134,6 +159,18 @@ class AdminChequeController extends AbstractController
         $cheque->setMotifRejet(null);
         $this->entityManager->flush();
 
+        if ($user = $this->resolveUserForCheque($cheque)) {
+            $this->notificationService->notifyChequeApproved($user, $cheque->getNumeroCheque());
+        }
+
+        $this->walletAuditService->logChequeAction(
+            'wallet.cheque.approved',
+            $cheque->getIdCheque(),
+            $cheque->getWallet()->getIdWallet(),
+            $this->resolveUserForCheque($cheque)?->getId(),
+            $cheque->getStatut()
+        );
+
         $this->addFlash('success', 'Le cheque a ete approuve avec succes.');
 
         return $this->redirectToRoute('admin_cheque_show', ['id' => $cheque->getIdCheque()]);
@@ -156,6 +193,19 @@ class AdminChequeController extends AbstractController
             $cheque->setStatut('refuse');
             $this->entityManager->flush();
 
+            if ($user = $this->resolveUserForCheque($cheque)) {
+                $this->notificationService->notifyChequeRejected($user, $cheque->getNumeroCheque(), $cheque->getMotifRejet());
+            }
+
+            $this->walletAuditService->logChequeAction(
+                'wallet.cheque.rejected',
+                $cheque->getIdCheque(),
+                $cheque->getWallet()->getIdWallet(),
+                $this->resolveUserForCheque($cheque)?->getId(),
+                $cheque->getStatut(),
+                $cheque->getMotifRejet()
+            );
+
             $this->addFlash('warning', 'Le cheque a ete refuse et le motif a ete enregistre.');
 
             return $this->redirectToRoute('admin_cheque_show', ['id' => $cheque->getIdCheque()]);
@@ -165,6 +215,42 @@ class AdminChequeController extends AbstractController
             'cheque' => $cheque,
             'form' => $form,
         ]);
+    }
+
+    #[Route('/{id}/deliver', name: 'deliver', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function deliver(int $id, Request $request): Response
+    {
+        /** @var Cheque|null $cheque */
+        $cheque = $this->entityManager->getRepository(Cheque::class)->find($id);
+
+        if (!$cheque) {
+            throw $this->createNotFoundException('Cheque introuvable.');
+        }
+
+        if (!$this->isCsrfTokenValid('deliver_cheque_' . $cheque->getIdCheque(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token CSRF invalide.');
+            return $this->redirectToRoute('admin_cheque_show', ['id' => $cheque->getIdCheque()]);
+        }
+
+        $cheque->setStatut('livre');
+        $cheque->setDatePresentation(new \DateTimeImmutable());
+        $this->entityManager->flush();
+
+        if ($user = $this->resolveUserForCheque($cheque)) {
+            $this->notificationService->notifyChequeDelivered($user, $cheque->getNumeroCheque());
+        }
+
+        $this->walletAuditService->logChequeAction(
+            'wallet.cheque.delivered',
+            $cheque->getIdCheque(),
+            $cheque->getWallet()->getIdWallet(),
+            $this->resolveUserForCheque($cheque)?->getId(),
+            $cheque->getStatut()
+        );
+
+        $this->addFlash('success', 'Le chequier a ete marque comme livre.');
+
+        return $this->redirectToRoute('admin_cheque_show', ['id' => $cheque->getIdCheque()]);
     }
 
     /**
@@ -214,5 +300,23 @@ class AdminChequeController extends AbstractController
         }
 
         return $qb;
+    }
+
+    private function resolveUserForCheque(Cheque $cheque): ?User
+    {
+        $wallet = $cheque->getWallet();
+
+        if ($wallet->getUser() instanceof User) {
+            return $wallet->getUser();
+        }
+
+        if ($wallet->getIdUser() !== null) {
+            /** @var User|null $user */
+            $user = $this->entityManager->getRepository(User::class)->find($wallet->getIdUser());
+
+            return $user;
+        }
+
+        return null;
     }
 }

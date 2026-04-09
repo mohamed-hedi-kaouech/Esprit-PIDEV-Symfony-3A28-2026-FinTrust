@@ -16,6 +16,12 @@
         <a href="{{ path('front_wallet_dashboard') }}" class="btn ft-btn-outline-primary">
           <i class="bi bi-house-door me-1"></i>Dashboard
         </a>
+        <a href="{{ path('front_wallet_cheques_export_csv') }}" class="btn ft-btn-outline-primary">
+          <i class="bi bi-filetype-csv me-1"></i>CSV
+        </a>
+        <a href="{{ path('front_wallet_cheques_export_pdf') }}" class="btn ft-btn-outline-primary">
+          <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+        </a>
         <a href="{{ path('front_wallet_cheque_request') }}" class="btn ft-btn-primary{% if wallet.estBloque %} disabled{% endif %}">
           <i class="bi bi-journal-plus me-1"></i>Demander un chequier
         </a>
@@ -42,6 +48,20 @@
           <div class="ft-dash-card-icon ft-dash-icon-green"><i class="bi bi-check2-circle"></i></div>
           <div class="ft-dash-card-label">Acceptees</div>
           <div class="ft-dash-card-value">{{ acceptedCount }}</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="ft-dash-card ft-dash-card-soft h-100">
+          <div class="ft-dash-card-icon ft-dash-icon-purple"><i class="bi bi-truck"></i></div>
+          <div class="ft-dash-card-label">Livrees</div>
+          <div class="ft-dash-card-value">{{ deliveredCount }}</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="ft-dash-card ft-dash-card-soft h-100">
+          <div class="ft-dash-card-icon ft-dash-icon-orange"><i class="bi bi-x-octagon"></i></div>
+          <div class="ft-dash-card-label">Refusees</div>
+          <div class="ft-dash-card-value">{{ refusedCount }}</div>
         </div>
       </div>
     </div>
@@ -78,7 +98,7 @@
                     <td>{{ cheque.montant|number_format(2, ',', ' ') }} {{ wallet.devise }}</td>
                     <td>{{ cheque.dateEmission|date('d/m/Y H:i') }}</td>
                     <td>
-                      <span class="badge {{ statut == 'accepte' ? 'ft-badge-success' : (statut == 'refuse' ? 'ft-badge-danger' : 'ft-badge-warning') }}">
+                      <span class="badge {{ statut == 'accepte' ? 'ft-badge-success' : (statut == 'refuse' ? 'ft-badge-danger' : (statut == 'livre' ? 'ft-badge-blue' : 'ft-badge-warning')) }}">
                         {{ cheque.statut|replace({'_': ' '})|title }}
                       </span>
                     </td>

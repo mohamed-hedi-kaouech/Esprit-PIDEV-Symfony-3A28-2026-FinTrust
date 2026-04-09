@@ -19,18 +19,24 @@ class ChequeRequestType extends AbstractType
         $builder
             ->add('beneficiaire', TextType::class, [
                 'label' => 'Beneficiaire',
+                'required' => true,
                 'constraints' => [
                     new NotBlank(['message' => 'Le beneficiaire est obligatoire.']),
-                    new Length(['max' => 100]),
+                    new Length([
+                        'max' => 100,
+                        'maxMessage' => 'Le beneficiaire ne doit pas depasser 100 caracteres.',
+                    ]),
                 ],
                 'attr' => [
                     'placeholder' => 'Nom du beneficiaire',
                     'maxlength' => 100,
+                    'required' => true,
                 ],
             ])
             ->add('montant', NumberType::class, [
                 'label' => 'Montant',
                 'scale' => 2,
+                'required' => true,
                 'constraints' => [
                     new NotBlank(['message' => 'Le montant est obligatoire.']),
                     new Positive(['message' => 'Le montant doit etre superieur a zero.']),
@@ -39,6 +45,8 @@ class ChequeRequestType extends AbstractType
                     'placeholder' => '0.00',
                     'step' => '0.01',
                     'min' => '0.01',
+                    'required' => true,
+                    'inputmode' => 'decimal',
                 ],
             ]);
     }

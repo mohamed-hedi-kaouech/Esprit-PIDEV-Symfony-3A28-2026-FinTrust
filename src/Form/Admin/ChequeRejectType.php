@@ -21,6 +21,9 @@ class ChequeRejectType extends AbstractType
                 'rows' => 5,
                 'class' => 'form-control ft-input',
                 'placeholder' => 'Expliquez clairement pourquoi ce cheque est refuse.',
+                'required' => true,
+                'maxlength' => 255,
+                'minlength' => 5,
             ],
             'constraints' => [
                 new NotBlank([

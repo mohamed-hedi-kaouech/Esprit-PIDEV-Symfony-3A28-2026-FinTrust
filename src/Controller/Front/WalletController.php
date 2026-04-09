@@ -2,6 +2,7 @@
 
 namespace App\Controller\Front;
 
+use App\Entity\User\Client\Notification;
 use App\Entity\User\User;
 use App\Entity\Wallet\Cheque;
 use App\Entity\Wallet\Transaction;
@@ -11,12 +12,16 @@ use App\Form\Front\WalletTransactionType;
 use App\Security\KycAccessChecker;
 use App\Security\RiskAccessChecker;
 use App\Service\KycService;
+use App\Service\NotificationService;
+use App\Service\UserService;
+use App\Service\WalletAuditService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
-use Symfony\Component\Form\FormError;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -29,7 +34,11 @@ class WalletController extends AbstractController
         private readonly KycAccessChecker $kycAccessChecker,
         private readonly RiskAccessChecker $riskAccessChecker,
         private readonly KycService $kycService,
-    ) {}
+        private readonly UserService $userService,
+        private readonly NotificationService $notificationService,
+        private readonly WalletAuditService $walletAuditService,
+    ) {
+    }
 
     #[Route('', name: 'dashboard', methods: ['GET'])]
     public function dashboard(): Response
@@ -49,15 +58,30 @@ class WalletController extends AbstractController
                 'chequeCount' => 0,
                 'latestTransactions' => [],
                 'latestCheques' => [],
+                'transferNotifications' => [],
+                'transferNotificationCount' => 0,
+                'walletNotifications' => [],
+                'walletStats' => $this->buildWalletStats(null, []),
+                'walletChart' => ['labels' => [], 'values' => []],
+                'auditEntries' => [],
             ]);
         }
+
+        $latestTransactions = $this->getLatestTransactions($wallet, 5);
+        $latestCheques = $this->getLatestCheques($wallet, 5);
 
         return $this->render('front/client/wallet/dashboard.html.twig', [
             'wallet' => $wallet,
             'transactionCount' => $this->countTransactionsForWallet($wallet),
             'chequeCount' => $this->countChequesForWallet($wallet),
-            'latestTransactions' => $this->getLatestTransactions($wallet, 5),
-            'latestCheques' => $this->getLatestCheques($wallet, 5),
+            'latestTransactions' => $latestTransactions,
+            'latestCheques' => $latestCheques,
+            'transferNotifications' => $this->getTransferNotificationsForUser($user, 5),
+            'transferNotificationCount' => $this->countUnreadTransferNotificationsForUser($user),
+            'walletNotifications' => $this->getWalletNotificationsForUser($user, 6),
+            'walletStats' => $this->buildWalletStats($wallet, $latestCheques),
+            'walletChart' => $this->buildTransactionChartData($wallet),
+            'auditEntries' => $this->walletAuditService->getRecentEntries(6, $user->getId()),
         ]);
     }
 
@@ -75,12 +99,20 @@ class WalletController extends AbstractController
             return $wallet;
         }
 
+        $transactions = $this->getLatestTransactions($wallet, 20);
+        $cheques = $this->getLatestCheques($wallet, 20);
+
         return $this->render('front/client/wallet/show.html.twig', [
             'wallet' => $wallet,
-            'transactions' => $this->getLatestTransactions($wallet, 20),
-            'cheques' => $this->getLatestCheques($wallet, 20),
+            'transactions' => $transactions,
+            'cheques' => $cheques,
             'transactionCount' => $this->countTransactionsForWallet($wallet),
             'chequeCount' => $this->countChequesForWallet($wallet),
+            'transferNotifications' => $this->getTransferNotificationsForUser($user, 8),
+            'transferNotificationCount' => $this->countUnreadTransferNotificationsForUser($user),
+            'walletNotifications' => $this->getWalletNotificationsForUser($user, 8),
+            'walletStats' => $this->buildWalletStats($wallet, $cheques),
+            'auditEntries' => $this->walletAuditService->getRecentEntries(10, $user->getId()),
         ]);
     }
 
@@ -140,6 +172,87 @@ class WalletController extends AbstractController
         ]);
     }
 
+    #[Route('/transactions/export/csv', name: 'transactions_export_csv', methods: ['GET'])]
+    public function exportTransactionsCsv(Request $request): StreamedResponse|Response
+    {
+        $user = $this->getAuthenticatedUser();
+        if ($redirect = $this->guardWalletAccess($user)) {
+            return $redirect;
+        }
+
+        $wallet = $this->requireWalletForUser($user);
+        if ($wallet instanceof Response) {
+            return $wallet;
+        }
+
+        $filters = [
+            'type' => trim((string) $request->query->get('type', '')),
+            'date_from' => trim((string) $request->query->get('date_from', '')),
+            'date_to' => trim((string) $request->query->get('date_to', '')),
+        ];
+
+        /** @var Transaction[] $transactions */
+        $transactions = $this->createTransactionQueryBuilder($wallet, $filters)
+            ->orderBy('t.dateTransaction', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        $response = new StreamedResponse(function () use ($transactions, $wallet) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, ['ID', 'Type', 'Montant', 'Description', 'Date', 'Devise'], ';');
+
+            foreach ($transactions as $transaction) {
+                fputcsv($handle, [
+                    $transaction->getIdTransaction(),
+                    $transaction->getType(),
+                    number_format($transaction->getMontant(), 2, '.', ''),
+                    $transaction->getDescription() ?? '',
+                    $transaction->getDateTransaction()->format('d/m/Y H:i'),
+                    $wallet->getDevise(),
+                ], ';');
+            }
+
+            fclose($handle);
+        });
+
+        $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
+        $response->headers->set('Content-Disposition', 'attachment; filename="wallet_transactions_' . date('Ymd_His') . '.csv"');
+
+        return $response;
+    }
+
+    #[Route('/transactions/export/pdf', name: 'transactions_export_pdf', methods: ['GET'])]
+    public function exportTransactionsPdf(Request $request): Response
+    {
+        $user = $this->getAuthenticatedUser();
+        if ($redirect = $this->guardWalletAccess($user)) {
+            return $redirect;
+        }
+
+        $wallet = $this->requireWalletForUser($user);
+        if ($wallet instanceof Response) {
+            return $wallet;
+        }
+
+        $filters = [
+            'type' => trim((string) $request->query->get('type', '')),
+            'date_from' => trim((string) $request->query->get('date_from', '')),
+            'date_to' => trim((string) $request->query->get('date_to', '')),
+        ];
+
+        /** @var Transaction[] $transactions */
+        $transactions = $this->createTransactionQueryBuilder($wallet, $filters)
+            ->orderBy('t.dateTransaction', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        return $this->render('front/client/wallet/transactions_export_pdf.html.twig', [
+            'wallet' => $wallet,
+            'transactions' => $transactions,
+        ]);
+    }
+
     #[Route('/transactions/nouvelle', name: 'transaction_new', methods: ['GET', 'POST'])]
     public function newTransaction(Request $request): Response
     {
@@ -169,7 +282,7 @@ class WalletController extends AbstractController
             $montant = round($transaction->getMontant(), 2);
             $soldeActuel = round((float) $wallet->getSolde(), 2);
 
-            if (!in_array($type, ['depot', 'retrait', 'transfert'], true)) {
+            if (!in_array($type, ['depot', 'retrait'], true)) {
                 $form->get('type')->addError(new FormError('Le type de transaction selectionne est invalide.'));
             }
 
@@ -196,6 +309,14 @@ class WalletController extends AbstractController
 
                 $this->entityManager->persist($transaction);
                 $this->entityManager->flush();
+
+                $this->walletAuditService->log('wallet.transaction.created', [
+                    'user_id' => $user->getId(),
+                    'wallet_id' => $wallet->getIdWallet(),
+                    'transaction_id' => $transaction->getIdTransaction(),
+                    'type' => $type,
+                    'amount' => $montant,
+                ]);
 
                 $this->addFlash('success', 'La transaction a ete enregistree avec succes.');
 
@@ -252,6 +373,21 @@ class WalletController extends AbstractController
             $this->entityManager->persist($cheque);
             $this->entityManager->flush();
 
+            $this->notificationService->notifyChequeRequested(
+                $user,
+                $cheque->getNumeroCheque(),
+                $cheque->getMontant(),
+                $cheque->getBeneficiaire()
+            );
+
+            $this->walletAuditService->logChequeAction(
+                'wallet.cheque.requested',
+                $cheque->getIdCheque(),
+                $wallet->getIdWallet(),
+                $user->getId(),
+                $cheque->getStatut()
+            );
+
             $this->addFlash('success', 'Votre demande de chequier a ete enregistree avec succes.');
 
             return $this->redirectToRoute('front_wallet_cheques');
@@ -278,23 +414,75 @@ class WalletController extends AbstractController
         }
 
         $cheques = $this->getLatestCheques($wallet, 50);
-        $pendingCount = 0;
-        $acceptedCount = 0;
-
-        foreach ($cheques as $cheque) {
-            $status = mb_strtolower($cheque->getStatut());
-            if ($status === 'en_attente') {
-                $pendingCount++;
-            } elseif ($status === 'accepte') {
-                $acceptedCount++;
-            }
-        }
+        $stats = $this->buildChequeStats($cheques);
 
         return $this->render('front/client/wallet/cheques.html.twig', [
             'wallet' => $wallet,
             'cheques' => $cheques,
-            'pendingCount' => $pendingCount,
-            'acceptedCount' => $acceptedCount,
+            'pendingCount' => $stats['pending'],
+            'acceptedCount' => $stats['accepted'],
+            'deliveredCount' => $stats['delivered'],
+            'refusedCount' => $stats['refused'],
+        ]);
+    }
+
+    #[Route('/cheques/export/csv', name: 'cheques_export_csv', methods: ['GET'])]
+    public function exportChequesCsv(): StreamedResponse|Response
+    {
+        $user = $this->getAuthenticatedUser();
+        if ($redirect = $this->guardWalletAccess($user)) {
+            return $redirect;
+        }
+
+        $wallet = $this->requireWalletForUser($user);
+        if ($wallet instanceof Response) {
+            return $wallet;
+        }
+
+        $cheques = $this->getLatestCheques($wallet, 200);
+
+        $response = new StreamedResponse(function () use ($cheques, $wallet) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, ['Numero', 'Beneficiaire', 'Montant', 'Statut', 'Date emission', 'Motif rejet', 'Devise'], ';');
+
+            foreach ($cheques as $cheque) {
+                fputcsv($handle, [
+                    $cheque->getNumeroCheque(),
+                    $cheque->getBeneficiaire() ?? '',
+                    number_format($cheque->getMontant(), 2, '.', ''),
+                    $cheque->getStatut(),
+                    $cheque->getDateEmission()->format('d/m/Y H:i'),
+                    $cheque->getMotifRejet() ?? '',
+                    $wallet->getDevise(),
+                ], ';');
+            }
+
+            fclose($handle);
+        });
+
+        $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
+        $response->headers->set('Content-Disposition', 'attachment; filename="wallet_cheques_' . date('Ymd_His') . '.csv"');
+
+        return $response;
+    }
+
+    #[Route('/cheques/export/pdf', name: 'cheques_export_pdf', methods: ['GET'])]
+    public function exportChequesPdf(): Response
+    {
+        $user = $this->getAuthenticatedUser();
+        if ($redirect = $this->guardWalletAccess($user)) {
+            return $redirect;
+        }
+
+        $wallet = $this->requireWalletForUser($user);
+        if ($wallet instanceof Response) {
+            return $wallet;
+        }
+
+        return $this->render('front/client/wallet/cheques_export_pdf.html.twig', [
+            'wallet' => $wallet,
+            'cheques' => $this->getLatestCheques($wallet, 200),
         ]);
     }
 
@@ -491,5 +679,126 @@ class WalletController extends AbstractController
             (new \DateTimeImmutable())->format('ymdHis'),
             random_int(10, 99)
         );
+    }
+
+    /**
+     * @return Notification[]
+     */
+    private function getTransferNotificationsForUser(User $user, int $limit): array
+    {
+        $notifications = array_filter(
+            $this->userService->getNotifications($user),
+            static fn (Notification $notification): bool => str_starts_with($notification->getMessage(), 'Transfert recu |')
+        );
+
+        return array_slice(array_values($notifications), 0, $limit);
+    }
+
+    /**
+     * @return Notification[]
+     */
+    private function getWalletNotificationsForUser(User $user, int $limit): array
+    {
+        $notifications = array_filter(
+            $this->userService->getNotifications($user),
+            static fn (Notification $notification): bool => str_contains($notification->getMessage(), 'wallet')
+                || str_contains($notification->getMessage(), 'chequier')
+                || str_contains($notification->getMessage(), 'Transfert ')
+        );
+
+        return array_slice(array_values($notifications), 0, $limit);
+    }
+
+    private function countUnreadTransferNotificationsForUser(User $user): int
+    {
+        return count(
+            array_filter(
+                $this->userService->getNotifications($user),
+                static fn (Notification $notification): bool => str_starts_with($notification->getMessage(), 'Transfert recu |') && !$notification->isRead()
+            )
+        );
+    }
+
+    /**
+     * @param Cheque[] $cheques
+     * @return array{pending:int,accepted:int,refused:int,delivered:int}
+     */
+    private function buildChequeStats(array $cheques): array
+    {
+        $stats = [
+            'pending' => 0,
+            'accepted' => 0,
+            'refused' => 0,
+            'delivered' => 0,
+        ];
+
+        foreach ($cheques as $cheque) {
+            $status = mb_strtolower($cheque->getStatut());
+
+            if ($status === 'en_attente') {
+                $stats['pending']++;
+            } elseif ($status === 'accepte') {
+                $stats['accepted']++;
+            } elseif ($status === 'refuse') {
+                $stats['refused']++;
+            } elseif ($status === 'livre') {
+                $stats['delivered']++;
+            }
+        }
+
+        return $stats;
+    }
+
+    /**
+     * @param Cheque[] $cheques
+     * @return array<string, mixed>
+     */
+    private function buildWalletStats(?Wallet $wallet, array $cheques): array
+    {
+        if (!$wallet instanceof Wallet) {
+            return [
+                'statusLabel' => 'Aucun wallet',
+                'statusTone' => 'neutral',
+                'pendingCheques' => 0,
+                'acceptedCheques' => 0,
+                'refusedCheques' => 0,
+                'deliveredCheques' => 0,
+            ];
+        }
+
+        $chequeStats = $this->buildChequeStats($cheques);
+        $status = mb_strtolower($wallet->getStatut());
+
+        return [
+            'statusLabel' => mb_strtoupper($wallet->getStatut()),
+            'statusTone' => $status === 'bloque' ? 'danger' : ($status === 'suspendu' ? 'warning' : 'success'),
+            'pendingCheques' => $chequeStats['pending'],
+            'acceptedCheques' => $chequeStats['accepted'],
+            'refusedCheques' => $chequeStats['refused'],
+            'deliveredCheques' => $chequeStats['delivered'],
+        ];
+    }
+
+    /**
+     * @return array{labels:array<int,string>,values:array<int,float>}
+     */
+    private function buildTransactionChartData(Wallet $wallet): array
+    {
+        $transactions = $this->getLatestTransactions($wallet, 7);
+        $transactions = array_reverse($transactions);
+
+        $labels = [];
+        $values = [];
+
+        foreach ($transactions as $transaction) {
+            $labels[] = $transaction->getDateTransaction()->format('d/m');
+            $value = $transaction->getMontant();
+            $values[] = mb_strtolower($transaction->getType()) === 'retrait' ? -$value : $value;
+        }
+
+        return [
+            'labels' => $labels,
+            'values' => $values,
+        ];
     }
 }
