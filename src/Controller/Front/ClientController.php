@@ -6,7 +6,10 @@ use App\Entity\User\Client\Kyc;
 use App\Entity\User\User;
 use App\Form\Front\KycFormType;
 use App\Form\Front\ProfileFormType;
+use App\Entity\Publication\Publication;
+use App\Form\Front\PublicationCommentType;
 use App\Repository\KycRepository;
+use App\Repository\PublicationRepository;
 use App\Security\KycAccessChecker;
 use App\Security\RiskAccessChecker;
 use App\Service\BehavioralProfileService;
@@ -16,6 +19,7 @@ use App\Service\NotificationService;
 use App\Service\QrCodeService;
 use App\Service\UserService;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -66,6 +70,8 @@ class ClientController extends AbstractController
         private readonly RiskAccessChecker $riskAccessChecker,
         private readonly ValidatorInterface $validator,
         private readonly BehavioralProfileService $behavioralProfileService,
+        private readonly PublicationRepository $publicationRepository,
+        private readonly EntityManagerInterface $em,
     ) {}
 
     #[Route('/tableau-de-bord', name: 'dashboard')]
@@ -269,7 +275,7 @@ class ClientController extends AbstractController
     }
 
     #[Route('/module/{slug}', name: 'module', methods: ['GET'])]
-    public function module(string $slug): Response
+    public function module(string $slug, Request $request): Response
     {
         /** @var User $user */
         $user = $this->getUser();
@@ -291,9 +297,107 @@ class ClientController extends AbstractController
             return $redirect;
         }
 
+        if ($slug === 'publications') {
+            $search = trim((string) $request->query->get('keyword', ''));
+            $category = trim((string) $request->query->get('category', '')) ?: null;
+            $sort = (string) $request->query->get('sort', 'recentes');
+
+            $publications = $this->publicationRepository->findPublishedWithStats(
+                $category,
+                $search,
+                $sort,
+            );
+
+            $categories = $this->publicationRepository->getDistinctCategories();
+
+            return $this->render('front/client/publications.html.twig', [
+                'module' => self::FRONT_MODULES[$slug],
+                'publications' => $publications,
+                'categories' => $categories,
+                'searchTerm' => $search,
+                'selectedCategory' => $category,
+                'sortBy' => $sort,
+            ]);
+        }
+
         return $this->render('front/client/module.html.twig', [
             'module' => self::FRONT_MODULES[$slug],
         ]);
+    }
+
+    #[Route('/publications/{id}', name: 'publications_view', methods: ['GET', 'POST'])]
+    public function viewPublication(Publication $publication, Request $request): Response
+    {
+        $comment = new \App\Entity\User\Feedback();
+        $commentForm = $this->createForm(PublicationCommentType::class, $comment, [
+            'action' => $this->generateUrl('front_publications_view', ['id' => $publication->getId()]),
+        ]);
+        $commentForm->handleRequest($request);
+
+        if ($commentForm->isSubmitted() && $commentForm->isValid()) {
+            $rating = (int) $commentForm->get('rating')->getData();
+            $comment->setPublication($publication)
+                ->setUser($this->getUser())
+                ->setDateFeedback(new \DateTimeImmutable())
+                ->setTypeReaction('RATING_' . $rating);
+
+            $this->em->persist($comment);
+            $this->em->flush();
+
+            $this->addFlash('success', 'Votre avis a bien été pris en compte.');
+
+            return $this->redirectToRoute('front_publications_view', ['id' => $publication->getId()]);
+        }
+
+        $feedbacks = $publication->getFeedbacks()->toArray();
+        $likes = count(array_filter($feedbacks, static fn($feedback) => $feedback->getTypeReaction() === 'LIKE'));
+        $dislikes = count(array_filter($feedbacks, static fn($feedback) => $feedback->getTypeReaction() === 'DISLIKE'));
+        $ratings = array_map(
+            static fn($feedback) => (int) substr($feedback->getTypeReaction(), 7),
+            array_filter($feedbacks, static fn($feedback) => str_starts_with((string) $feedback->getTypeReaction(), 'RATING_'))
+        );
+        $averageRating = $ratings ? round(array_sum($ratings) / count($ratings), 1) : null;
+        $comments = array_filter($feedbacks, static fn($feedback) => $feedback->getCommentaire() !== null && $feedback->getCommentaire() !== '');
+
+        return $this->render('front/client/publication_detail.html.twig', [
+            'module' => self::FRONT_MODULES['publications'],
+            'publication' => $publication,
+            'commentForm' => $commentForm->createView(),
+            'likes' => $likes,
+            'dislikes' => $dislikes,
+            'averageRating' => $averageRating,
+            'comments' => $comments,
+        ]);
+    }
+
+    #[Route('/publications/{id}/reaction/{reaction}', name: 'publications_react', methods: ['POST'])]
+    public function reactPublication(Publication $publication, string $reaction, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('publication_react_' . $publication->getId(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Action invalide.');
+
+            return $this->redirectToRoute('front_publications_view', ['id' => $publication->getId()]);
+        }
+
+        $reaction = strtoupper($reaction);
+        if (!in_array($reaction, ['LIKE', 'DISLIKE'], true)) {
+            $this->addFlash('error', 'Réaction invalide.');
+
+            return $this->redirectToRoute('front_publications_view', ['id' => $publication->getId()]);
+        }
+
+        $feedback = new \App\Entity\User\Feedback();
+        $feedback->setPublication($publication)
+            ->setUser($this->getUser())
+            ->setDateFeedback(new \DateTimeImmutable())
+            ->setTypeReaction($reaction);
+
+        $this->em->persist($feedback);
+        $this->em->flush();
+
+        $this->addFlash('success', sprintf('Votre %s a bien été enregistré.', strtolower($reaction)));
+
+        return $this->redirectToRoute('front_publications_view', ['id' => $publication->getId()]);
     }
 
     #[Route('/notifications', name: 'notifications')]

@@ -1,0 +1,818 @@
+{% extends 'admin/back.html.twig' %}
+
+{% block title %}Gestion des Publications{% endblock %}
+
+{% block admin_content %}
+<div class="admin-publications-container">
+    <!-- En-tête avec bouton d'ajout -->
+    <div class="publications-header">
+        <div class="header-info">
+            <h1 class="page-title">
+                <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5h16a2.5 2.5 0 0 0 2.5-2.5V6.5H1.5v10.5a2.5 2.5 0 0 0 2.5 2.5z"/>
+                    <path d="M1.5 6.5h21M9 11h6M9 15h6"/>
+                </svg>
+                Publications Bancaires
+            </h1>
+            <p class="header-subtitle">Gérez vos publications, offres et contenu financier</p>
+        </div>
+        <div class="publication-actions">
+            <a href="{{ path('admin_publications_create') }}" class="btn btn-primary btn-lg">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Nouvelle Publication
+            </a>
+            <div class="export-buttons">
+                <a href="{{ path('admin_publications_export_csv', {search: search, category: current_category, sort: sort_by}) }}" class="btn btn-secondary btn-lg">Export CSV</a>
+                <a href="{{ path('admin_publications_export_pdf', {search: search, category: current_category, sort: sort_by}) }}" class="btn btn-secondary btn-lg">Export PDF</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques élégantes -->
+    <div class="stats-grid">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon">📰</div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ stats.total_publications }}</h3>
+                <p class="stat-label">Publications totales</p>
+            </div>
+        </div>
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon">✅</div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ stats.published_publications }}</h3>
+                <p class="stat-label">Publications publiées</p>
+            </div>
+        </div>
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon">💬</div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ stats.total_comments }}</h3>
+                <p class="stat-label">Commentaires totaux</p>
+            </div>
+        </div>
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-content">
+                <h3 class="stat-value">{{ stats.total_feedbacks }}</h3>
+                <p class="stat-label">Interactions totales</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtres et recherche -->
+    <div class="filters-section">
+        <form method="GET" class="filters-form">
+            <div class="filter-group">
+                <label for="search" class="filter-label">🔍 Rechercher</label>
+                <input 
+                    type="text" 
+                    id="search" 
+                    name="search" 
+                    value="{{ search }}" 
+                    placeholder="Titre ou extrait..."
+                    class="filter-input"
+                >
+            </div>
+
+            <div class="filter-group">
+                <label for="category" class="filter-label">📂 Catégorie</label>
+                <select id="category" name="category" class="filter-select">
+                    <option value="">Toutes les catégories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>
+                            {{ cat }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="sort" class="filter-label">📊 Tri</label>
+                <select id="sort" name="sort" class="filter-select">
+                    <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Plus récentes</option>
+                    <option value="views" {% if sort_by == 'views' %}selected{% endif %}>Plus consultées</option>
+                    <option value="comments" {% if sort_by == 'comments' %}selected{% endif %}>Plus commentées</option>
+                    <option value="likes" {% if sort_by == 'likes' %}selected{% endif %}>Tendance</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-secondary">Filtrer</button>
+        </form>
+    </div>
+
+    <!-- Tableau des publications -->
+    <div class="publications-table-wrapper">
+        {% if publications|length > 0 %}
+            <table class="publications-table">
+                <thead>
+                    <tr>
+                        <th>Titre</th>
+                        <th>Catégorie</th>
+                        <th>Statut</th>
+                        <th>Date</th>
+                        <th class="text-center">Vues</th>
+                        <th class="text-center">Likes</th>
+                        <th class="text-center">Dislikes</th>
+                        <th class="text-center">Commentaires</th>
+                        <th class="text-center">Note</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pub in publications %}
+                        <tr class="publication-row">
+                            <td class="title-cell">
+                                <strong>{{ pub.titre|slice(0, 30) }}{{ pub.titre|length > 30 ? '...' : '' }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge badge-category">
+                                    {{ pub.categorie ?: 'Non définie' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ pub.statut|lower }}">
+                                    {% if pub.statut == 'PUBLIÉ' %}✅ Publié
+                                    {% elseif pub.statut == 'BROUILLON' %}📝 Brouillon
+                                    {% else %}📦 Archivé{% endif %}
+                                </span>
+                            </td>
+                            <td class="text-muted">{{ pub.datePublication ? pub.datePublication|date('d/m/Y') : '—' }}</td>
+                            <td class="text-center">
+                                <span class="stat-badge">—</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="stat-badge stat-badge-success">—</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="stat-badge stat-badge-danger">—</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="stat-badge stat-badge-info">
+                                    💬 {{ pub.feedbacks|length }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <small class="text-muted">Aucune note</small>
+                            </td>
+                            <td class="text-right">
+                                <div class="action-buttons">
+                                    <a href="{{ path('admin_publications_comments', {id: pub.id}) }}" class="btn-icon btn-info" title="Commentaires">
+                                        💬
+                                    </a>
+                                    <a href="{{ path('admin_publications_edit', {id: pub.id}) }}" class="btn-icon btn-warning" title="Modifier">
+                                        ✏️
+                                    </a>
+                                    <form method="POST" action="{{ path('admin_publications_delete', {id: pub.id}) }}" style="display:inline;" onsubmit="return confirm('Confirmer la suppression?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ pub.id) }}">
+                                        <button type="submit" class="btn-icon btn-danger" title="Supprimer">🗑️</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <h3>Aucune publication trouvée</h3>
+                <p>Créez votre première publication pour commencer</p>
+                <a href="{{ path('admin_publications_create') }}" class="btn btn-primary">Créer une publication</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if current_page > 1 %}
+                <a href="{{ path('admin_publications_index', {page: 1, search: search, category: current_category, sort: sort_by}) }}" class="page-link">« Première</a>
+                <a href="{{ path('admin_publications_index', {page: current_page - 1, search: search, category: current_category, sort: sort_by}) }}" class="page-link">‹ Précédente</a>
+            {% endif %}
+
+            {% for page in range(1, total_pages) %}
+                <a 
+                    href="{{ path('admin_publications_index', {page: page, search: search, category: current_category, sort: sort_by}) }}" 
+                    class="page-link {% if page == current_page %}active{% endif %}"
+                >
+                    {{ page }}
+                </a>
+            {% endfor %}
+
+            {% if current_page < total_pages %}
+                <a href="{{ path('admin_publications_index', {page: current_page + 1, search: search, category: current_category, sort: sort_by}) }}" class="page-link">Suivante ›</a>
+                <a href="{{ path('admin_publications_index', {page: total_pages, search: search, category: current_category, sort: sort_by}) }}" class="page-link">Dernière »</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div class="publication-analytics">
+        <h2>Statistiques avancées</h2>
+
+        <div class="analytics-grid">
+            <div class="stat-card stat-card-primary">
+                <div class="stat-card-icon">💬</div>
+                <div>
+                    <p class="stat-card-title">Commentaires</p>
+                    <p class="stat-card-number">{{ feedback_stats.comments }}</p>
+                </div>
+            </div>
+            <div class="stat-card stat-card-success">
+                <div class="stat-card-icon">👍</div>
+                <div>
+                    <p class="stat-card-title">Likes</p>
+                    <p class="stat-card-number">{{ feedback_stats.likes }}</p>
+                </div>
+            </div>
+            <div class="stat-card stat-card-warning">
+                <div class="stat-card-icon">👎</div>
+                <div>
+                    <p class="stat-card-title">Dislikes</p>
+                    <p class="stat-card-number">{{ feedback_stats.dislikes }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="analytics-grid analytics-grid-3">
+            <div class="chart-card">
+                <h3>Répartition circulaire</h3>
+                {% set totalTrend = 0 %}
+                {% for point in publication_trend %}
+                    {% set totalTrend = totalTrend + point.count %}
+                {% endfor %}
+
+                {% set colorPalette = ["#3b82f6", "#ec4899", "#f97316", "#22c55e", "#8b5cf6", "#14b8a6"] %}
+                {% set offset = 0 %}
+                {% set gradientStops = [] %}
+                {% for point in publication_trend %}
+                    {% set percentage = totalTrend > 0 ? (point.count / totalTrend * 100) : 0 %}
+                    {% set stop = colorPalette[loop.index0 % colorPalette|length] ~ ' ' ~ offset ~ '% ' ~ (offset + percentage) ~ '%' %}
+                    {% set gradientStops = gradientStops|merge([stop]) %}
+                    {% set offset = offset + percentage %}
+                {% endfor %}
+
+                <div class="pie-chart-card">
+                    <div class="pie-chart" style="background: {{ totalTrend > 0 ? 'conic-gradient(' ~ gradientStops|join(', ') ~ ')' : '#e2e8f0' }};">
+                        <div class="pie-center">
+                            <span>{{ totalTrend }}</span>
+                            <small>publications</small>
+                        </div>
+                    </div>
+                    <div class="pie-legend">
+                        {% for point in publication_trend %}
+                            {% set color = colorPalette[loop.index0 % colorPalette|length] %}
+                            <div class="pie-legend-item">
+                                <span class="legend-color" style="background: {{ color }}"></span>
+                                <span>{{ point.label }} ({{ point.count }})</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h3>Catégories</h3>
+                <div class="category-breakdown">
+                    <table>
+                        <thead>
+                            <tr><th>Catégorie</th><th>Publications</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for item in category_stats %}
+                                <tr>
+                                    <td>{{ item.category ?: 'Non défini' }}</td>
+                                    <td>{{ item.count }}</td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="2">Aucune catégorie définie</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-publications-container {
+    padding: 2rem;
+}
+
+.publications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+}
+
+.header-subtitle {
+    color: #64748b;
+    margin: 0.5rem 0 0;
+}
+
+.icon-lg { width: 2rem; height: 2rem; }
+.icon { width: 1.25rem; height: 1.25rem; }
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    padding: 1.5rem;
+    border-radius: 12px;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    border: 1px solid #e2e8f0;
+}
+
+.stat-card-primary { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); }
+.stat-card-success { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); }
+.stat-card-info { background: linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%); }
+.stat-card-warning { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); }
+
+.stat-icon {
+    font-size: 2.5rem;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin: 0;
+}
+
+.filters-section {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 2rem;
+}
+
+.filters-form {
+    display: grid;
+    grid-template-columns: 1fr minmax(200px, 1fr) minmax(200px, 1fr) auto;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.5rem;
+}
+
+.filter-input,
+.filter-select {
+    padding: 0.625rem 0.875rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.875rem;
+}
+
+.publications-table-wrapper {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.publications-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.publications-table thead {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.publications-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #475569;
+}
+
+.publications-table tbody tr {
+    border-bottom: 1px solid #e2e8f0;
+    transition: background 0.2s;
+}
+
+.publications-table tbody tr:hover {
+    background: #f1f5f9;
+}
+
+.title-cell {
+    font-weight: 500;
+}
+
+.pie-chart-card {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.pie-chart {
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    position: relative;
+    box-shadow: inset 0 0 0 16px #f8fafc, 0 20px 40px rgba(15, 23, 42, 0.08);
+}
+
+.pie-center {
+    position: absolute;
+    inset: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #ffffff;
+    text-align: center;
+    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.9);
+}
+
+.pie-center span {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.pie-center small {
+    display: block;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
+.pie-legend {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.pie-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+    color: #334155;
+}
+
+.legend-color {
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+@media (max-width: 900px) {
+    .pie-chart-card {
+        grid-template-columns: 1fr;
+        justify-items: center;
+    }
+
+    .pie-chart {
+        width: 180px;
+        height: 180px;
+    }
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-category {
+    background: #e0e7ff;
+    color: #000;
+}
+
+.badge-published { background: #dcfce7; color: #15803d; }
+.badge-draft { background: #fef3c7; color: #92400e; }
+.badge-archived { background: #f3f4f6; color: #6b7280; }
+
+.stat-badge {
+    background: #f1f5f9;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.stat-badge-success { color: #16a34a; }
+.stat-badge-danger { color: #dc2626; }
+.stat-badge-info { color: #0284c7; }
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 6px;
+    font-size: 1.25rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    transform: scale(1.1);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+}
+
+.page-link {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #0f172a;
+    transition: all 0.2s;
+}
+
+.page-link:hover {
+    background: #e2e8f0;
+}
+
+.page-link.active {
+    background: #3b82f6;
+    color: #fff;
+    border-color: #3b82f6;
+}
+
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-muted { color: #94a3b8; }
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.btn-secondary:hover {
+    background: #cbd5e1;
+}
+
+    .publication-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: flex-start;
+        margin-top: 1rem;
+    }
+
+    .export-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .publication-analytics {
+        margin-top: 2.5rem;
+        padding: 1.5rem;
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .publication-analytics h2 {
+        margin-bottom: 1rem;
+        color: #0f172a;
+        font-size: 1.5rem;
+    }
+
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .analytics-grid-3 {
+        grid-template-columns: repeat(2, minmax(240px, 1fr));
+    }
+
+    .stat-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+
+    .stat-card-icon {
+        display: grid;
+        place-items: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: #e2e8f0;
+        font-size: 1.25rem;
+    }
+
+    .stat-card-title {
+        margin: 0 0 0.25rem;
+        font-weight: 700;
+        color: #334155;
+    }
+
+    .stat-card-number {
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .chart-card {
+        background: #f8fafc;
+        padding: 1.25rem;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .chart-card h3 {
+        margin-top: 0;
+        margin-bottom: 1rem;
+        font-size: 1.05rem;
+        color: #0f172a;
+    }
+
+    .trend-chart {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .trend-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .trend-label {
+        font-size: 0.85rem;
+        color: #475569;
+    }
+
+    .trend-bar-wrapper {
+        width: 100%;
+        background: #e2e8f0;
+        border-radius: 9999px;
+        height: 10px;
+        overflow: hidden;
+    }
+
+    .trend-bar {
+        height: 100%;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        border-radius: 9999px;
+    }
+
+    .trend-value {
+        font-size: 0.85rem;
+        color: #334155;
+        white-space: nowrap;
+    }
+
+    .category-breakdown table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .category-breakdown th,
+    .category-breakdown td {
+        padding: 0.75rem 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 0.9rem;
+        text-align: left;
+    }
+
+    .category-breakdown thead th {
+        background: #f1f5f9;
+        color: #334155;
+    }
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .publications-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .filters-form {
+        grid-template-columns: 1fr;
+    }
+
+    .publications-table {
+        font-size: 0.75rem;
+    }
+
+    .action-buttons {
+        font-size: 0.75rem;
+    }
+}
+</style>
+
+<script>
+  const debounce = (fn, delay = 400) => {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn(...args), delay);
+    };
+  };
+
+  const searchInput = document.getElementById('search');
+  const categorySelect = document.getElementById('category');
+  const sortSelect = document.getElementById('sort');
+  const filterForm = document.querySelector('.filters-form');
+
+  if (searchInput && categorySelect && sortSelect && filterForm) {
+    searchInput.addEventListener('input', debounce(() => filterForm.submit()));
+    categorySelect.addEventListener('change', () => filterForm.submit());
+    sortSelect.addEventListener('change', () => filterForm.submit());
+  }
+</script>
+{% endblock %}

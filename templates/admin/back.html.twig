@@ -113,7 +113,8 @@
           <span>Suivi budgetaire</span>
         </a>
 
-        <a href="{{ path('admin_dashboard') }}#admin-publications" class="ft-sidebar-link">
+        <a href="{{ path('admin_publications_index') }}"
+           class="ft-sidebar-link {% if 'admin_publications_' in app.request.attributes.get('_route') %}active{% endif %}">
           <i class="bi bi-newspaper"></i>
           <span>Centre publications</span>
         </a>

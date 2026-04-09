@@ -1,0 +1,156 @@
+{% extends 'front/front.html.twig' %}
+
+{% block title %}Publications{% endblock %}
+
+{% block body %}
+<div class="ft-app-page">
+  <div class="container-fluid px-4 py-4" style="max-width:1180px">
+    <div class="d-flex align-items-center gap-3 mb-4 flex-column flex-md-row justify-content-between">
+      <div>
+        <div class="ft-page-icon-lg bg-primary-soft text-primary"><i class="bi bi-newspaper"></i></div>
+        <h1 class="ft-page-title mt-3 mb-1">Publications FinTrust</h1>
+        <p class="text-muted mb-0">Explorez les actualités, analyses et conseils financiers en format premium.</p>
+      </div>
+      <a href="{{ path('front_dashboard') }}" class="btn ft-btn-outline-primary mt-3 mt-md-0">
+        <i class="bi bi-grid me-2"></i>Retour au dashboard
+      </a>
+    </div>
+
+    <div class="ft-app-card mb-4">
+      <div class="ft-app-card-body p-4">
+        <form method="get" action="" class="row gx-3 gy-3 align-items-end" novalidate="novalidate">
+          <div class="col-lg-5">
+            <label class="form-label small fw-semibold">Recherche par mot-clé</label>
+            <input type="text" name="keyword" value="{{ searchTerm }}" class="form-control ft-input" placeholder="Rechercher un titre, une analyse ou une astuce" />
+          </div>
+          <div class="col-lg-3">
+            <label class="form-label small fw-semibold">Filtrer par catégorie</label>
+            <select name="category" class="form-select ft-input">
+              <option value="">Toutes les catégories</option>
+              {% for category in categories %}
+                <option value="{{ category }}" {{ selectedCategory == category ? 'selected' : '' }}>{{ category }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-lg-3">
+            <label class="form-label small fw-semibold">Trier par</label>
+            <select name="sort" class="form-select ft-input">
+              <option value="recentes" {{ sortBy == 'recentes' ? 'selected' : '' }}>Récentes</option>
+              <option value="trending" {{ sortBy == 'trending' ? 'selected' : '' }}>Tendance</option>
+              <option value="mieux_notees" {{ sortBy == 'mieux_notees' ? 'selected' : '' }}>Mieux notées</option>
+            </select>
+          </div>
+          <div class="col-lg-1 d-grid">
+            <button type="submit" class="btn ft-btn-primary">OK</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      {% for publication in publications %}
+        <div class="col-xl-6">
+          <article class="ft-publication-card h-100">
+            <div class="ft-publication-card-image" style="background-image:url('{{ asset('images/publications/' ~ (publication.id ~ '.jpg')) }}');">
+              <div class="ft-publication-card-badge">{{ publication.categorie ?: 'Actualité' }}</div>
+            </div>
+            <div class="ft-publication-card-body d-flex flex-column">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                  <h2 class="ft-publication-title">{{ publication.titre }}</h2>
+                  <p class="text-muted small mb-0">{{ publication.datePublication ? publication.datePublication|date('d/m/Y') : 'Date indisponible' }}</p>
+                </div>
+                <div class="text-end">
+                  <span class="ft-badge ft-badge-small">{{ publication.statut }}</span>
+                </div>
+              </div>
+
+              <p class="text-secondary mb-4">{{ publication.contenu|striptags|slice(0, 160) ~ (publication.contenu|length > 160 ? '...' : '') }}</p>
+
+              <div class="mt-auto d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="text-warning">★★★★★</span>
+                  <span class="small text-muted">{{ publication.feedbacks|length }} avis</span>
+                </div>
+                <a href="{{ path('front_publications_view', {id: publication.id}) }}" class="btn btn-sm ft-btn-outline-primary px-4">
+                  Voir plus
+                </a>
+              </div>
+            </div>
+          </article>
+        </div>
+      {% else %}
+        <div class="col-12">
+          <div class="ft-app-card text-center py-5">
+            <p class="mb-0 text-muted">Aucune publication ne correspond à vos critères pour le moment.</p>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+.ft-publication-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 380px;
+  border: none;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.08);
+}
+.ft-publication-card-image {
+  min-height: 220px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.ft-publication-card-badge {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  background: rgba(255,255,255,0.95);
+  color: #0f172a;
+  font-weight: 700;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  font-size: 0.85rem;
+}
+.ft-publication-card-body {
+  padding: 1.9rem 2rem 2rem;
+  background: #ffffff;
+}
+.ft-publication-title {
+  font-size: 1.35rem;
+  line-height: 1.2;
+  margin-bottom: 0.35rem;
+}
+.ft-badge-small {
+  color: #0f172a;
+  background: #eef2ff;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+}
+.ft-page-icon-lg {
+  width: 54px;
+  height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.12);
+  border-radius: 16px;
+}
+.bg-primary-soft { background: rgba(59, 130, 246, 0.13); }
+
+@media (max-width: 768px) {
+  .ft-publication-card { min-height: auto; }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends 'front/front.html.twig' %}
+
+{% block title %}{{ publication.titre }}{% endblock %}
+
+{% block body %}
+<div class="ft-app-page">
+  <div class="container-fluid px-4 py-4" style="max-width:1080px">
+    <div class="mb-4">
+      <a href="{{ path('front_module', {slug: 'publications'}) }}" class="btn btn-sm ft-btn-outline-primary">
+        <i class="bi bi-arrow-left me-2"></i>Retour aux publications
+      </a>
+    </div>
+
+    <div class="ft-app-card mb-4 overflow-hidden">
+      <div class="position-relative publication-hero">
+        <div class="publication-hero-mask"></div>
+        <div class="publication-hero-content">
+          <span class="badge ft-badge-small">{{ publication.categorie ?: 'Actualité' }}</span>
+          <h1 class="ft-page-title mt-3 mb-3">{{ publication.titre }}</h1>
+          <p class="text-muted mb-2">Publié le {{ publication.datePublication ? publication.datePublication|date('d/m/Y') : 'Date non définie' }}</p>
+          <div class="d-flex flex-wrap gap-3 align-items-center mt-3">
+            <span class="text-warning fw-semibold fs-6">{{ averageRating is not null ? averageRating ~ ' / 5' : 'Pas encore noté' }}</span>
+            <span class="text-white small">
+              {% for i in 1..5 %}
+                <i class="bi {{ averageRating >= i ? 'bi-star-fill' : 'bi-star' }}"></i>
+              {% endfor %}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ft-app-card-body row g-4 pt-5">
+        <div class="col-lg-8">
+          <div class="publication-copy mb-4">
+            <p class="lead text-secondary">{{ publication.contenu|raw }}</p>
+          </div>
+
+          <div class="d-flex flex-wrap gap-3 mb-4">
+            <form method="post" action="{{ path('front_publications_react', {id: publication.id, reaction: 'like'}) }}" novalidate="novalidate">
+              <input type="hidden" name="_token" value="{{ csrf_token('publication_react_' ~ publication.id) }}" />
+              <button type="submit" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-hand-thumbs-up me-1"></i>Like ({{ likes }})
+              </button>
+            </form>
+            <form method="post" action="{{ path('front_publications_react', {id: publication.id, reaction: 'dislike'}) }}" novalidate="novalidate">
+              <input type="hidden" name="_token" value="{{ csrf_token('publication_react_' ~ publication.id) }}" />
+              <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-hand-thumbs-down me-1"></i>Dislike ({{ dislikes }})
+              </button>
+            </form>
+          </div>
+
+          <div class="mb-4">
+            <h2 class="ft-section-title">Commentaires</h2>
+            {% if comments is empty %}
+              <p class="text-muted">Soyez le premier à laisser un avis sur cette publication.</p>
+            {% endif %}
+            {% for feedback in comments %}
+              <div class="comment-card mb-3">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <span class="fw-semibold">{{ feedback.user.prenom }} {{ feedback.user.nom|first ~ '.' }}</span>
+                    <span class="text-muted small ms-2">{{ feedback.dateFeedback ? feedback.dateFeedback|date('d/m/Y H:i') : '...' }}</span>
+                  </div>
+                  <span class="badge ft-badge-neutral">Avis</span>
+                </div>
+                <p class="mb-2">{{ feedback.commentaire }}</p>
+                {% if feedback.typeReaction is not empty and feedback.typeReaction starts with('RATING_') %}
+                  <div class="small text-warning">
+                    {% set stars = feedback.typeReaction|split('_')[1]|default(0) %}
+                    {% for i in 1..5 %}
+                      <i class="bi {{ i <= stars ? 'bi-star-fill' : 'bi-star' }}"></i>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="ft-app-card h-100">
+            <div class="ft-app-card-header">
+              <i class="bi bi-chat-left-text me-2 text-primary"></i>Laisser un avis
+            </div>
+            <div class="ft-app-card-body">
+              {{ form_start(commentForm, {attr: {novalidate: 'novalidate'}}) }}
+                <div class="mb-3">
+                  {{ form_label(commentForm.commentaire, null, {label_attr: {class: 'form-label fw-semibold small'}}) }}
+                  {{ form_widget(commentForm.commentaire, {attr: {class: 'form-control ft-input', rows: 4, placeholder: 'Votre commentaire'}}) }}
+                  {% if commentForm.commentaire.vars.errors|length > 0 %}
+                    <div class="text-danger small mt-1">{{ form_errors(commentForm.commentaire) }}</div>
+                  {% endif %}
+                </div>
+
+                <div class="mb-4">
+                  <label class="form-label fw-semibold small d-block mb-2">Votre note</label>
+                  {{ form_widget(commentForm.rating) }}
+                  {% if commentForm.rating.vars.errors|length > 0 %}
+                    <div class="text-danger small mt-1">{{ form_errors(commentForm.rating) }}</div>
+                  {% endif %}
+                </div>
+
+                <button type="submit" class="btn ft-btn-primary w-100">
+                  <i class="bi bi-send-fill me-2"></i>Envoyer mon avis
+                </button>
+              {{ form_end(commentForm) }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+.publication-hero {
+  min-height: 320px;
+  background: radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 35%),
+              linear-gradient(180deg, rgba(15,23,42,0.92) 0%, rgba(15,23,42,0.76) 100%),
+              url('{{ asset('images/hero-publication.jpg') }}') center/cover no-repeat;
+  position: relative;
+  border-radius: 24px 24px 0 0;
+}
+.publication-hero-mask {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(15,23,42,0.5), rgba(15,23,42,0.9));
+}
+.publication-hero-content {
+  position: relative;
+  color: white;
+  padding: 2.75rem 2.5rem 3rem;
+}
+.publication-copy p {
+  color: #334155;
+  line-height: 1.8;
+}
+.comment-card {
+  border-radius: 18px;
+  background: #f8fafc;
+  padding: 1.35rem;
+}
+.ft-badge-small {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ft-app-card-header {
+  font-weight: 700;
+}
+</style>
+{% endblock %}

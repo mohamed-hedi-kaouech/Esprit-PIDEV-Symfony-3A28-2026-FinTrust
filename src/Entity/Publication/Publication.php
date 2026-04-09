@@ -2,39 +2,43 @@
 
 namespace App\Entity\Publication;
 
+use App\Repository\PublicationRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: PublicationRepository::class)]
 #[ORM\Table(name: 'publication')]
 class Publication
 {
     #[ORM\Id]
-    #[ORM\Column(name: 'id_publication', type: 'integer')]
     #[ORM\GeneratedValue]
-    private int $idPublication;
+    #[ORM\Column(name: 'id_publication')]
+    private ?int $id = null;
 
-    #[ORM\Column(name: 'titre', type: 'string', length: 255)]
-    private string $titre;
+    #[ORM\Column(name: 'titre', type: Types::STRING, length: 255)]
+    #[Assert\NotBlank]
+    private ?string $titre = null;
 
-    #[ORM\Column(name: 'contenu', type: 'text')]
-    private string $contenu;
+    #[ORM\Column(name: 'contenu', type: Types::TEXT)]
+    #[Assert\NotBlank]
+    private ?string $contenu = null;
 
-    #[ORM\Column(name: 'categorie', type: 'string', length: 100, nullable: true)]
-    private string|null $categorie = null;
+    #[ORM\Column(name: 'categorie', type: Types::STRING, length: 100, nullable: true)]
+    private ?string $categorie = null;
 
-    #[ORM\Column(name: 'statut', type: 'string', length: 50, nullable: true)]
-    private string|null $statut = null;
+    #[ORM\Column(name: 'statut', type: Types::STRING, length: 50)]
+    private ?string $statut = null;
 
-    #[ORM\Column(name: 'est_visible', type: 'boolean', nullable: true)]
-    private bool|null $estVisible = true;
+    #[ORM\Column(name: 'est_visible', type: Types::BOOLEAN, options: ['default' => true])]
+    private bool $estVisible = true;
 
-    #[ORM\Column(name: 'date_publication', type: 'datetime', nullable: true)]
-    private \DateTimeInterface|null $datePublication = null;
+    #[ORM\Column(name: 'date_publication', type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $datePublication = null;
 
-    #[ORM\OneToMany(targetEntity: \App\Entity\User\Feedback::class, mappedBy: 'publication')]
+    #[ORM\OneToMany(targetEntity: \App\Entity\User\Feedback::class, mappedBy: 'publication', cascade: ['remove'], orphanRemoval: true)]
     private Collection $feedbacks;
 
     public function __construct()
@@ -42,12 +46,12 @@ class Publication
         $this->feedbacks = new ArrayCollection();
     }
 
-    public function getIdPublication(): int
+    public function getId(): ?int
     {
-        return $this->idPublication;
+        return $this->id;
     }
 
-    public function getTitre(): string
+    public function getTitre(): ?string
     {
         return $this->titre;
     }
@@ -58,7 +62,7 @@ class Publication
         return $this;
     }
 
-    public function getContenu(): string
+    public function getContenu(): ?string
     {
         return $this->contenu;
     }
@@ -69,71 +73,78 @@ class Publication
         return $this;
     }
 
-    public function getCategorie(): string|null
+    public function getCategorie(): ?string
     {
         return $this->categorie;
     }
 
-    public function setCategorie(string|null $categorie): static
+    public function setCategorie(?string $categorie): static
     {
         $this->categorie = $categorie;
         return $this;
     }
 
-    public function getStatut(): string|null
+    public function getStatut(): ?string
     {
         return $this->statut;
     }
 
-    public function setStatut(string|null $statut): static
+    public function setStatut(string $statut): static
     {
         $this->statut = $statut;
         return $this;
     }
 
-    public function getEstVisible(): bool|null
+    public function isEstVisible(): bool
     {
         return $this->estVisible;
     }
 
-    public function setEstVisible(bool|null $estVisible): static
+    public function setEstVisible(bool $estVisible): static
     {
         $this->estVisible = $estVisible;
         return $this;
     }
 
-    public function getDatePublication(): \DateTimeInterface|null
+    public function getDatePublication(): ?\DateTimeInterface
     {
         return $this->datePublication;
     }
 
-    public function setDatePublication(\DateTimeInterface|null $datePublication): static
+    public function setDatePublication(?\DateTimeInterface $datePublication): static
     {
         $this->datePublication = $datePublication;
         return $this;
     }
 
+    /**
+     * @return Collection<int, \App\Entity\User\Feedback>
+     */
     public function getFeedbacks(): Collection
     {
         return $this->feedbacks;
     }
 
-    public function addFeedback(Feedback $feedback): static
+    public function addFeedback(\App\Entity\User\Feedback $feedback): static
     {
         if (!$this->feedbacks->contains($feedback)) {
             $this->feedbacks->add($feedback);
+            $feedback->setPublication($this);
         }
+
         return $this;
     }
 
-    public function removeFeedback(Feedback $feedback): static
+    public function removeFeedback(\App\Entity\User\Feedback $feedback): static
     {
-        $this->feedbacks->removeElement($feedback);
-        return $this;
-    }
+        if ($this->feedbacks->removeElement($feedback)) {
+            // set the owning side to null (unless already changed)
+            if ($feedback->getPublication() === $this) {
+                $feedback->setPublication(null);
+            }
+        }
 
-    public function isEstVisible(): ?bool
-    {
-        return $this->estVisible;
+        return $this;
     }
 }
+

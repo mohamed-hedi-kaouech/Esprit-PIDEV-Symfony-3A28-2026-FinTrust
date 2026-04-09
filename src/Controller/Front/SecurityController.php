@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
+use Psr\Log\LoggerInterface;
 
 class SecurityController extends AbstractController
 {
@@ -21,6 +22,7 @@ class SecurityController extends AbstractController
         Request $request,
         UserService $userService,
         AccountVerificationMailer $accountVerificationMailer,
+        LoggerInterface $logger,
     ): Response {
         if ($redirect = $this->redirectAuthenticatedUser()) {
             return $redirect;
@@ -33,11 +35,21 @@ class SecurityController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $plainPassword = (string) $form->get('plainPassword')->getData();
             $userService->registerClient($user, $plainPassword);
+            
             try {
                 $accountVerificationMailer->sendVerificationCode($user);
-                $this->addFlash('success', 'Compte cree avec succes. Un code de verification a ete envoye a votre adresse e-mail.');
-            } catch (\Throwable) {
-                $this->addFlash('warning', 'Compte cree avec succes. L envoi de l e-mail a echoue pour le moment, mais vous pouvez demander un nouveau code.');
+                $this->addFlash('success', 'Compte créé avec succès. Un code de vérification a été envoyé à votre adresse e-mail.');
+                $logger->info('Email de vérification envoyé avec succès', [
+                    'user_email' => $user->getEmail(),
+                    'verification_code' => $user->getEmailVerificationCode(),
+                ]);
+            } catch (\Throwable $e) {
+                $this->addFlash('warning', 'Compte créé avec succès. L\'envoi de l\'e-mail a échoué pour le moment, mais vous pouvez demander un nouveau code.');
+                $logger->error('Erreur lors de l\'envoi du code de vérification', [
+                    'user_email' => $user->getEmail(),
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
             }
 
             return $this->redirectToRoute('app_verify_account', [

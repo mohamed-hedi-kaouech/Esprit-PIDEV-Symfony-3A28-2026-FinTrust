@@ -13,9 +13,6 @@ class Feedback
     #[ORM\GeneratedValue]
     private int $idFeedback;
 
-    #[ORM\Column(name: 'id_publication', type: 'integer')]
-    private int $idPublication;
-
     #[ORM\Column(name: 'id_user', type: 'integer')]
     private int $idUser;
 
@@ -40,17 +37,6 @@ class Feedback
     public function getIdFeedback(): int
     {
         return $this->idFeedback;
-    }
-
-    public function getIdPublication(): int
-    {
-        return $this->idPublication;
-    }
-
-    public function setIdPublication(int $idPublication): static
-    {
-        $this->idPublication = $idPublication;
-        return $this;
     }
 
     public function getIdUser(): int

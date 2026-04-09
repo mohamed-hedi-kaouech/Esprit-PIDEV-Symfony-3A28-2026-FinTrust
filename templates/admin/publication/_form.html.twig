@@ -1,0 +1,197 @@
+<div class="publication-form-container">
+    <div class="form-header">
+        <a href="{{ path('admin_publications_index') }}" class="btn-back">← Retour</a>
+        <h1>
+            {% if publication.id %}
+                ✏️ Modifier la publication
+            {% else %}
+                ➕ Créer une nouvelle publication
+            {% endif %}
+        </h1>
+    </div>
+
+    {{ form_start(form, {'attr': {'class': 'publication-form', 'novalidate': true}}) }}
+
+    <div class="form-sections">
+        <!-- Informations principales -->
+        <div class="form-section">
+            <h2 class="section-title">📝 Informations principales</h2>
+            
+            <div class="form-group">
+                {{ form_label(form.titre, 'Titre') }}
+                {{ form_widget(form.titre, {'attr': {'class': 'form-input', 'placeholder': 'Titre de la publication'}}) }}
+                {{ form_errors(form.titre) }}
+            </div>
+
+            <div class="form-group">
+                {{ form_label(form.contenu, 'Contenu détaillé') }}
+                {{ form_widget(form.contenu, {'attr': {'class': 'form-textarea', 'rows': '12', 'placeholder': 'Contenu complet de la publication'}}) }}
+                {{ form_errors(form.contenu) }}
+            </div>
+        </div>
+
+        <!-- Catégorie et statut -->
+        <div class="form-section">
+            <h2 class="section-title">🏷️ Classification</h2>
+
+            <div class="form-group">
+                {{ form_label(form.categorie, 'Catégorie / Thème') }}
+                {{ form_widget(form.categorie, {'attr': {'class': 'form-input', 'placeholder': 'Catégorie de la publication'}}) }}
+                {{ form_errors(form.categorie) }}
+            </div>
+
+            <div class="form-group">
+                {{ form_label(form.statut, 'Statut') }}
+                {{ form_widget(form.statut, {'attr': {'class': 'form-select'}}) }}
+                {{ form_errors(form.statut) }}
+                <small class="form-help">Brouillon = invisible, Publié = visible</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-lg">
+            {% if publication.id %}
+                ✅ Mettre à jour
+            {% else %}
+                ✅ Créer la publication
+            {% endif %}
+        </button>
+        <a href="{{ path('admin_publications_index') }}" class="btn btn-secondary btn-lg">Annuler</a>
+    </div>
+
+    {{ form_end(form) }}
+</div>
+
+<style>
+.publication-form-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.form-header {
+    margin-bottom: 2rem;
+}
+
+.btn-back {
+    display: inline-block;
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.form-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.form-sections {
+    display: grid;
+    gap: 2rem;
+}
+
+.form-section {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-error {
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: #fee2e2;
+    border-radius: 6px;
+    border-left: 3px solid #dc2626;
+}
+
+.form-help {
+    display: block;
+    color: #64748b;
+    font-size: 0.825rem;
+    margin-top: 0.5rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    color: #fff;
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.btn-secondary:hover {
+    background: #cbd5e1;
+}
+</style>
