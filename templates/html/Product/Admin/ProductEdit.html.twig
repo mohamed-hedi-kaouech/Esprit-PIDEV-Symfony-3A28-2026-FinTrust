@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Modifier le Produit</title>
+
+  <link rel="stylesheet" href="{{ asset('css/Product/StyleEditProduct.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-left">
+        <a href="{{ path('product_list') }}" class="btn-back">← Retour</a>
+        <span class="header-title">Modifier le Produit</span>
+    </div>
+</header>
+
+<div class="page-wrapper">
+
+```
+{# Flash messages #}
+{% for msg in app.flashes('success') %}
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: '{{ msg }}',
+            showConfirmButton: false,
+            timer: 2000
+        });
+    </script>
+{% endfor %}
+
+{% for msg in app.flashes('error') %}
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: '{{ msg }}'
+        });
+    </script>
+{% endfor %}
+
+<div class="section-heading">
+    <h2>Modification du Produit</h2>
+    <p>Modifiez les informations du produit ci-dessous</p>
+    <hr class="divider">
+</div>
+
+<div class="info-strip">
+    <div class="info-item">
+        <span class="info-label">📋 Catégorie actuelle</span>
+        <span class="info-value">{{ product.category }}</span>
+    </div>
+    <div class="info-item">
+        <span class="info-label">💰 Prix actuel</span>
+        <span class="info-value">{{ product.price|number_format(2, '.', ' ') }} DT</span>
+    </div>
+    <div class="info-item">
+        <span class="info-label">📅 Date de création</span>
+        <span class="info-value">{{ product.createdAt|date('d/m/Y') }}</span>
+    </div>
+</div>
+
+<div class="form-card">
+    <form method="POST" action="{{ path('EditProduct', {id: product.productId}) }}">
+
+        <input type="hidden" name="_token" value="{{ csrf_token('EditProduct_' ~ product.productId) }}">
+        <input type="hidden" name="productId" value="{{ product.productId }}">
+
+        <!-- Category -->
+        <div class="form-group">
+            <label class="field-label">Nouvelle Catégorie</label>
+            <select name="category" class="form-select">
+                <option value="">Sélectionner une catégorie</option>
+
+                {% set categories = [
+                    'COMPTE_COURANT','COMPTE_EPARGNE','COMPTE_PREMIUM',
+                    'COMPTE_JEUNE','COMPTE_ENTREPRISE',
+                    'CARTE_DEBIT','CARTE_CREDIT','CARTE_PREMIUM',
+                    'CARTE_VIRTUELLE',
+                    'EPARGNE_CLASSIQUE','EPARGNE_LOGEMENT','DEPOT_A_TERME',
+                    'PLACEMENT_INVESTISSEMENT',
+                    'ASSURANCE_VIE','ASSURANCE_HABITATION','ASSURANCE_VOYAGE'
+                ] %}
+
+                {% for cat in categories %}
+                    <option value="{{ cat }}"
+                        {% if product.category == cat %}selected{% endif %}>
+                        {{ cat }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Price -->
+        <div class="form-group">
+            <label class="field-label">Nouveau Prix (DT)</label>
+            <div class="price-row">
+                <input type="text" name="price" class="form-input" value="{{ product.price }}">
+                <span class="currency-tag">DT</span>
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+            <label class="field-label">Nouvelle Description</label>
+            <textarea name="description" class="form-textarea">{{ product.description|trim }}</textarea>
+        </div>
+
+        <!-- Date -->
+        <div class="form-group">
+            <label class="field-label">Date de Création</label>
+            <input type="date" class="form-input"
+                   value="{{ product.createdAt|date('Y-m-d') }}"
+                   disabled>
+        </div>
+
+        <hr class="form-divider">
+
+        <div class="btn-row">
+            <button type="submit" class="btn btn-primary">
+                ✓ Enregistrer les modifications
+            </button>
+
+            <a href="{{ path('product_list') }}" class="btn btn-secondary">
+                Annuler
+            </a>
+        </div>
+
+    </form>
+</div>
+```
+
+</div>
+
+<script>
+document.querySelector('form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    Swal.fire({
+        title: 'Confirmer la modification ?',
+        text: 'Les changements seront appliqués immédiatement.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Oui, modifier',
+        cancelButtonText: 'Annuler'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            e.target.submit();
+        }
+    });
+});
+</script>
+
+</body>
+</html>

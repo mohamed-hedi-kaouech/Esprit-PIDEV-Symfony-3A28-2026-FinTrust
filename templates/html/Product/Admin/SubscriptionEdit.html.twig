@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier l'abonnement </title>
+    <link rel="stylesheet" href="{{ asset('css/Product/SubscriptionEdit.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+
+{# ── TOP BAR ── #}
+<header class="topbar">
+    <a href="{{ path('subscription_list') }}" class="btn-back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Retour
+    </a>
+    <h1 class="topbar-title">Modifier l'abonnement</h1>
+</header>
+
+<main class="content">
+    <div class="form-card" style="max-width:680px; margin:32px auto;">
+
+
+
+        {# ── CARD HEADER ── #}
+        <div style="display:flex; align-items:flex-start; gap:14px; margin-bottom:22px;">
+            <span style="font-size:28px;">✏️</span>
+            <div>
+                <div class="form-title">Modification d'abonnement</div>
+                <div class="form-subtitle">Mettez à jour les informations de l'abonnement</div>
+            </div>
+        </div>
+
+        {# ── CURRENT INFO DISPLAY ── #}
+        <div class="current-info-display">
+            <div class="current-info-title">📋 Informations actuelles</div>
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:10px;">
+                <div>
+                    <div class="current-label">Client</div>
+                    <div class="current-value">
+                        {{ subscription.clientUser.nom }} {{ subscription.clientUser.prenom }}
+                    </div>
+                </div>
+                <div>
+                    <div class="current-label">Produit</div>
+                    <div class="current-value">{{ subscription.productObj.category }}</div>
+                </div>
+                <div>
+                    <div class="current-label">Type</div>
+                    <div class="current-value-budget">{{ subscription.type }}</div>
+                </div>
+                <div>
+                    <div class="current-label">Statut</div>
+                    <span class="status-badge status-badge--{{ subscription.status|lower }}">
+                            {% if   subscription.status == 'ACTIVE'    %}Actif
+                            {% elseif subscription.status == 'DRAFT'     %}Brouillon
+                            {% elseif subscription.status == 'SUSPENDED' %}Suspendu
+                            {% elseif subscription.status == 'CLOSED'    %}Fermé
+                            {% else %}{{ subscription.status }}{% endif %}
+                        </span>
+                </div>
+            </div>
+        </div>
+
+        <hr class="form-separator">
+        <div class="section-title">Nouvelles valeurs</div>
+
+        {# ── UPDATE FORM ── #}
+        <form method="post" action="{{ path('subscription_update', {id: subscription.subscriptionId}) }}">
+            <input type="hidden" name="_token"
+                   value="{{ csrf_token('update' ~ subscription.subscriptionId) }}">
+
+            {# Client #}
+            <div class="input-group">
+                <label class="input-label" for="cbClient">Client *</label>
+                <select id="cbClient" name="client" class="input-field" required>
+                    {% for client in clients %}
+                        <option value="{{ client.id }}"
+                                {{ subscription.client == client.id ? 'selected' : '' }}>
+                            {{ client.nom }} {{ client.prenom }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <div class="input-help">Choisissez le client pour cet abonnement</div>
+            </div>
+
+            {# Product #}
+            <div class="input-group">
+                <label class="input-label" for="cbProduct">Produit *</label>
+                <select id="cbProduct" name="product" class="input-field" required>
+                    {% for product in products %}
+                        <option value="{{ product.productId }}"
+                                {{ subscription.product == product.productId ? 'selected' : '' }}>
+                            {{ product.productId }} — {{ product.category }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {# Type #}
+            <div class="input-group">
+                <label class="input-label" for="cbType">Type d'abonnement *</label>
+                <select id="cbType" name="type" class="input-field" required>
+                    {% for type in ['MONTHLY','ANNUAL','TRANSACTION','ONE_TIME'] %}
+                        <option value="{{ type }}"
+                                {{ subscription.type == type ? 'selected' : '' }}>
+                            {{ type }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {# Dates #}
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div class="input-group">
+                    <label class="input-label" for="dpSubscriptionDate">Date de souscription *</label>
+                    <input type="date" id="dpSubscriptionDate" name="subscriptionDate"
+                           class="input-field" required
+                           value="{{ subscription.subscriptionDate|date('Y-m-d') }}">
+                </div>
+                <div class="input-group">
+                    <label class="input-label" for="dpExpirationDate">Date d'expiration *</label>
+                    <input type="date" id="dpExpirationDate" name="expirationDate"
+                           class="input-field" required
+                           value="{{ subscription.expirationDate|date('Y-m-d') }}">
+                </div>
+            </div>
+
+            {# Status #}
+            <div class="input-group">
+                <label class="input-label" for="cbStatus">Statut *</label>
+                <select id="cbStatus" name="status" class="input-field" required>
+                    {% for status in ['DRAFT','ACTIVE','SUSPENDED','CLOSED'] %}
+                        <option value="{{ status }}"
+                                {{ subscription.status == status ? 'selected' : '' }}>
+                            {{ status }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {# Preview Box (JS-computed) #}
+            <div class="preview-box">
+                <div class="preview-title">📊 Aperçu</div>
+                <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+                    <span class="preview-label">Durée :</span>
+                    <span class="preview-value" id="previewDuration">-</span>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <span class="preview-label">Jours restants :</span>
+                    <span class="preview-statut" id="previewRemaining">-</span>
+                </div>
+            </div>
+
+            <hr class="form-separator">
+
+            <div class="warning-box">
+                <div class="warning-title">⚠️ Attention</div>
+                <div class="warning-text">· Les modifications seront appliquées immédiatement</div>
+                <div class="warning-text">· Vérifiez les dates avant d'enregistrer</div>
+            </div>
+
+            <div style="display:flex; gap:12px; justify-content:center; margin-top:20px;">
+                <button type="submit" class="btn-save">✅ Enregistrer</button>
+                <button type="reset" class="btn-clear">🔄 Réinitialiser</button>
+                <button type="button" class="btn-danger" onclick="confirmDelete()">🗑️ Supprimer</button>
+            </div>
+        </form>
+
+        {# Delete form (hidden, triggered by JS) #}
+        <form id="deleteForm" method="post"
+              action="{{ path('subscriptiondelete', {id: subscription.subscriptionId}) }}"
+              style="display:none;">
+            <input type="hidden" name="_token"
+                   value="{{ csrf_token('delete' ~ subscription.subscriptionId) }}">
+        </form>
+    </div>
+</main>
+
+<script>
+    function updatePreview() {
+        const s = document.getElementById('dpSubscriptionDate').value;
+        const e = document.getElementById('dpExpirationDate').value;
+        if (!s || !e) return;
+        const start = new Date(s), end = new Date(e), now = new Date();
+        const duration = Math.round((end - start) / 86400000);
+        const remaining = Math.round((end - now) / 86400000);
+        document.getElementById('previewDuration').textContent =
+            duration > 0 ? duration + ' jours' : 'Dates invalides';
+        document.getElementById('previewRemaining').textContent =
+            remaining >= 0 ? remaining + ' jours' : Math.abs(remaining) + ' jours dépassés';
+    }
+    document.getElementById('dpSubscriptionDate').addEventListener('change', updatePreview);
+    document.getElementById('dpExpirationDate').addEventListener('change', updatePreview);
+    updatePreview();
+
+    function confirmDelete() {
+        if (confirm('Supprimer cet abonnement ? Cette action est irréversible.')) {
+            document.getElementById('deleteForm').submit();
+        }
+    }
+        document.querySelector('form').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        Swal.fire({
+        title: 'Confirmer la modification ?',
+        text: 'Les changements seront appliqués immédiatement.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Oui, modifier',
+        cancelButtonText: 'Annuler'
+    }).then((result) => {
+        if (result.isConfirmed) {
+        e.target.submit();
+    }
+    });
+    });
+</script>
+</body>
+</html>

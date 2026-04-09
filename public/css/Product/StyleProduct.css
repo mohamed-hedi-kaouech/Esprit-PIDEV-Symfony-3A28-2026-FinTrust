@@ -1,0 +1,270 @@
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f5f7;
+      color: #1a1a1a;
+      min-height: 100vh;
+    }
+
+    .page { padding: 28px 32px; min-height: 100vh; }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid #d0d5dd;
+      background: #ffffff;
+      color: #344054;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn-back:hover { background: #f9fafb; }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #101828;
+    }
+
+    .spacer { flex: 1; }
+
+    .btn-add {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 20px;
+      border-radius: 8px;
+      border: none;
+      background: #185FA5;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn-add:hover { background: #0C447C; }
+
+    /* ── List container ── */
+    .list-container {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e4e7ec;
+      padding: 20px;
+    }
+
+    /* ── Search row ── */
+    .search-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .search-input {
+      width: 300px;
+      padding: 9px 14px;
+      border: 1px solid #d0d5dd;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #101828;
+      background: #f9fafb;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .search-input:focus {
+      border-color: #185FA5;
+      box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.12);
+      background: #fff;
+    }
+    .search-input::placeholder { color: #98a2b3; }
+
+    .btn-search {
+      padding: 9px 18px;
+      border-radius: 8px;
+      border: none;
+      background: #185FA5;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-search:hover { background: #0C447C; }
+
+    .btn-reset {
+      padding: 9px 18px;
+      border-radius: 8px;
+      border: 1px solid #d0d5dd;
+      background: #ffffff;
+      color: #667085;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      transition: background 0.15s;
+    }
+    .btn-reset:hover { background: #f9fafb; }
+
+    /* ── Filter row ── */
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-size: 13px;
+      color: #667085;
+      font-weight: 500;
+    }
+
+    .filter-select {
+      padding: 8px 12px;
+      border: 1px solid #d0d5dd;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #344054;
+      background: #f9fafb;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .filter-select:focus {
+      border-color: #185FA5;
+      box-shadow: 0 0 0 3px rgba(24, 95, 165, 0.12);
+    }
+
+    /* ── Table ── */
+    .product-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .product-table thead tr {
+      border-bottom: 1px solid #e4e7ec;
+    }
+
+    .product-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: #667085;
+      padding: 8px 12px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .product-table td {
+      padding: 13px 12px;
+      font-size: 14px;
+      color: #344054;
+      border-bottom: 1px solid #f2f4f7;
+      vertical-align: middle;
+    }
+
+    .product-table tr:last-child td { border-bottom: none; }
+    .product-table tbody tr:hover td { background: #f9fafb; }
+
+    /* ── Category icon ── */
+    .product-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: #f2f4f7;
+      border: 1px solid #e4e7ec;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 600;
+      color: #344054;
+      letter-spacing: 0;
+    }
+
+    .product-name     { font-weight: 600; color: #101828; }
+    .product-category { color: #667085; }
+    .product-price    { font-variant-numeric: tabular-nums; font-weight: 500; }
+    .product-date     { color: #98a2b3; font-size: 13px; }
+    .product-desc     { color: #667085; font-size: 13px; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-blue   { background: #E6F1FB; color: #185FA5; }
+    .badge-green  { background: #EAF3DE; color: #3B6D11; }
+    .badge-amber  { background: #FAEEDA; color: #854F0B; }
+    .badge-purple { background: #EEEDFE; color: #534AB7; }
+    .badge-coral  { background: #FAECE7; color: #993C1D; }
+    .badge-gray   { background: #F1EFE8; color: #5F5E5A; }
+
+    /* ── Action buttons ── */
+    .action-btn {
+      padding: 5px 13px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid #d0d5dd;
+      background: transparent;
+      color: #344054;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      transition: background 0.12s;
+    }
+    .action-btn:hover { background: #f2f4f7; }
+    .action-btn + .action-btn { margin-left: 6px; }
+
+    .action-del { border-color: #F09595; color: #A32D2D; }
+    .action-del:hover { background: #FCEBEB; }
+
+    /* ── Footer ── */
+    .footer-info {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 12px;
+      color: #98a2b3;
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 48px 0;
+      color: #98a2b3;
+      font-size: 14px;
+    }
+
+    /* ── Active search highlight ── */
+    .active-search-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: #667085;
+    }
+    .active-search-bar strong { color: #101828; }

@@ -2,6 +2,7 @@
 
 namespace App\Entity\Publication;
 
+use App\Entity\User\Feedback;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;

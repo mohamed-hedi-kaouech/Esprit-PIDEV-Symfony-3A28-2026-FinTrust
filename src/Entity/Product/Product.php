@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Entity\Produit;
+namespace App\Entity\Product;
 
 use Doctrine\DBAL\Types\Types;
+use App\Repository\Product\ProductRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
-#[ORM\Entity]
-#[ORM\Table(name: 'product')]
+#[ORM\Entity(repositoryClass: ProductRepository::class)]
 class Product
 {
     #[ORM\Id]
@@ -28,7 +28,7 @@ class Product
     #[ORM\Column(name: 'createdAt', type: 'date')]
     private \DateTimeInterface $createdAt;
 
-    #[ORM\OneToMany(targetEntity: \App\Entity\Produit\ProductSubscription::class, mappedBy: 'productObj')]
+    #[ORM\OneToMany(targetEntity: ProductSubscription::class, mappedBy: 'productObj')]
     private Collection $subscriptions;
 
     public function __construct()

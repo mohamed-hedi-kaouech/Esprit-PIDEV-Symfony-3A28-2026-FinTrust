@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Entity\Produit;
+namespace App\Entity\Product;
 
+use App\Entity\User\User;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -31,13 +32,13 @@ class ProductSubscription
     #[ORM\Column(name: 'status', type: 'string')]
     private string $status;
 
-    #[ORM\ManyToOne(targetEntity: \App\Entity\User\User::class)]
-    #[ORM\JoinColumn(name: 'client', referencedColumnName: 'id')]
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'client', referencedColumnName: 'id', onDelete: 'CASCADE')]
     private User $clientUser;
 
     // FIX: added inversedBy: 'subscriptions' to match Product#subscriptions OneToMany
-    #[ORM\ManyToOne(targetEntity: \App\Entity\Produit\Product::class, inversedBy: 'subscriptions')]
-    #[ORM\JoinColumn(name: 'product', referencedColumnName: 'productId')]
+    #[ORM\ManyToOne(targetEntity: Product::class, inversedBy: 'subscriptions')]
+    #[ORM\JoinColumn(name: 'product', referencedColumnName: 'productId', onDelete: 'CASCADE')]
     private Product $productObj;
 
     public function getSubscriptionId(): int

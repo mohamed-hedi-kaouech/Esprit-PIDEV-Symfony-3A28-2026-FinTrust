@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>BankOS · Dashboard Analytique</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="{{ asset('css/Product/Dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+
+<!-- ══ TOP BAR ══ -->
+<header class="topbar">
+    <button class="btn btn-back" onclick="history.back()">⬅ Retour</button>
+    <span class="topbar-sep">|</span>
+    <span style="font-size:18px">📊</span>
+    <span class="topbar-title">Dashboard Analytique</span>
+    <div class="spacer"></div>
+    <button class="btn btn-refresh" id="btnRefresh" onclick="loadDashboard()">⟳ &nbsp;Actualiser</button>
+    <button class="btn btn-email" onclick="sendEmailReport()">📧 &nbsp;Envoyer Rapport PDF</button>
+</header>
+
+<!-- ══ MAIN ══ -->
+<main>
+
+    <!-- Section: Products -->
+    <div class="section-heading">
+        <span class="section-bar blue">▌</span>
+        <span class="section-label">Produits Bancaires</span>
+        <div class="section-line"></div>
+    </div>
+
+    <div class="kpi-row" id="kpiProducts">
+        <div class="kpi-card">
+            <div class="kpi-icon-label">📦 Produits Total</div>
+            <div class="kpi-value" id="lblTotalProducts">—</div>
+            <div class="kpi-sub" id="lblProductsGrowth">dans le catalogue</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon-label">💰 Prix Moyen</div>
+            <div class="kpi-value amber" id="lblAvgPrice">—</div>
+            <div class="kpi-sub">DT / produit</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon-label">🏆 Catégorie Top</div>
+            <div class="kpi-value md" id="lblTopCategory">—</div>
+            <div class="kpi-sub blue" id="lblTopCategoryCount">abonnements</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon-label">📉 → 📈 Fourchette Prix</div>
+            <div class="kpi-value md green" id="lblPriceRange">—</div>
+            <div class="kpi-sub">min → max DT</div>
+        </div>
+        <div class="kpi-card" style="min-width:200px">
+            <div class="kpi-icon-label">🆕 Dernier Produit</div>
+            <div class="kpi-value md" id="lblNewestProduct" style="font-size:16px;word-break:break-word">—</div>
+            <div class="kpi-sub" id="lblNewestDate">—</div>
+        </div>
+    </div>
+
+    <!-- Section: Subscriptions -->
+    <div class="section-heading">
+        <span class="section-bar amber">▌</span>
+        <span class="section-label">Abonnements</span>
+        <div class="section-line"></div>
+    </div>
+
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <div class="kpi-icon-label">📋 Total Abonnements</div>
+            <div class="kpi-value" id="lblTotalSubs">—</div>
+            <div class="kpi-sub">tous statuts</div>
+        </div>
+        <div class="kpi-card green">
+            <div class="kpi-icon-label">✅ Actifs</div>
+            <div class="kpi-value green" id="lblActiveSubs">—</div>
+            <div class="kpi-sub green" id="lblActiveRate">—% du total</div>
+        </div>
+        <div class="kpi-card amber">
+            <div class="kpi-icon-label">⏸ Suspendus</div>
+            <div class="kpi-value amber" id="lblSuspendedSubs">—</div>
+            <div class="kpi-sub amber" id="lblSuspendedRate">—% du total</div>
+        </div>
+        <div class="kpi-card red">
+            <div class="kpi-icon-label">❌ Fermés</div>
+            <div class="kpi-value red" id="lblClosedSubs">—</div>
+            <div class="kpi-sub red" id="lblClosedRate">—% du total</div>
+        </div>
+        <div class="kpi-card blue-accent">
+            <div class="kpi-icon-label">💎 Revenu Total Estimé</div>
+            <div class="kpi-value blue" id="lblTotalRevenue" style="font-size:28px">—</div>
+            <div class="kpi-sub">DT (abonnements actifs)</div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="charts-row">
+        <div class="chart-panel half" style="max-width:400px">
+            <div class="chart-title">Abonnements par Statut</div>
+            <div class="chart-sub">Répartition ACTIVE / SUSPENDED / CLOSED / DRAFT</div>
+            <div class="chart-wrap"><canvas id="chartSubsByStatus" height="260"></canvas></div>
+        </div>
+        <div class="chart-panel half">
+            <div class="chart-title">Produits par Catégorie</div>
+            <div class="chart-sub">Nombre de produits dans chaque catégorie bancaire</div>
+            <div class="chart-wrap"><canvas id="chartProductsByCategory" height="260"></canvas></div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="charts-row">
+        <div class="chart-panel half" style="max-width:480px">
+            <div class="chart-title">Abonnements par Type</div>
+            <div class="chart-sub">MONTHLY / ANNUAL / TRANSACTION / ONE_TIME</div>
+            <div class="chart-wrap"><canvas id="chartSubsByType" height="240"></canvas></div>
+        </div>
+        <div class="chart-panel half">
+            <div class="chart-title">Abonnements dans le Temps</div>
+            <div class="chart-sub">Évolution mensuelle des nouvelles souscriptions</div>
+            <div class="chart-wrap"><canvas id="chartSubsOverTime" height="240"></canvas></div>
+        </div>
+    </div>
+
+    <!-- Charts Row 3: Joint -->
+    <div class="chart-panel full blue-accent">
+        <div class="chart-title">⭐ Revenu par Catégorie × Nombre d'Abonnements</div>
+        <div class="chart-sub">Graphique joint : chiffre d'affaires estimé (prix × abonnements actifs) par catégorie de produit</div>
+        <div class="chart-wrap"><canvas id="chartRevenueByCategory" height="280"></canvas></div>
+    </div>
+
+</main>
+
+<!-- ══ STATUS BAR ══ -->
+<footer class="statusbar">
+    <span id="lblLastRefresh">Dernière actualisation : —</span>
+    <div class="spacer"></div>
+    <span>BankOS · Admin Analytics</span>
+</footer>
+
+<div id="toast"></div>
+
+<script src="{{ asset('js/Product/Dashboard.js') }}" defer></script>
+</body>
+</html>
