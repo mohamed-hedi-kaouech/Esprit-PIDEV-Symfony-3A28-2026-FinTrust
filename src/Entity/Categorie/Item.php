@@ -36,7 +36,6 @@ class Item
     #[ORM\JoinColumn(name: 'idCategorie', referencedColumnName: 'idCategorie')]
     private Categorie $categorieRel;
 
-    #[ORM\Column(name: 'dateCreation', type: 'datetime', nullable: true)]
     private \DateTimeInterface|null $dateCreation = null;
 
     public function getIdItem(): int

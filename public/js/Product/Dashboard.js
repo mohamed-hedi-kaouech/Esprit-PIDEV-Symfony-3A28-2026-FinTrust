@@ -1,173 +1,425 @@
-// ─── Chart registry ───
 const charts = {};
-function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
-function showToast(msg,ms=3000){
-    const t=document.getElementById('toast');
-    t.textContent=msg;t.classList.add('show');
-    setTimeout(()=>t.classList.remove('show'),ms);
+function destroyChart(id) {
+    if (charts[id]) {
+        charts[id].destroy();
+        delete charts[id];
+    }
 }
 
-// ─── Color palettes ───
-const PALETTE_STATUS =['#1e8e3e','#d97706','#dc2626','#6b7f94'];
-const PALETTE_CAT    =['#1a73e8','#0d47a1','#42a5f5','#1565c0','#90caf9','#1976d2'];
-const PALETTE_TYPE   =['#7c3aed','#a855f7','#c084fc','#e879f9'];
-const PALETTE_TIME   =['#1a73e8'];
-const PALETTE_REV    =['#1a73e8','#d97706'];
+function showToast(message, duration = 3200) {
+    const toast = document.getElementById('toast');
+    if (!toast) {
+        return;
+    }
 
-// ─── Chart.js defaults ───
-Chart.defaults.font.family="'DM Sans', sans-serif";
-Chart.defaults.color='#6b7f94';
+    toast.textContent = message;
+    toast.classList.add('show');
 
-function makePie(canvasId, labels, data){
-    destroyChart(canvasId);
-    const ctx=document.getElementById(canvasId).getContext('2d');
-    charts[canvasId]=new Chart(ctx,{
-        type:'doughnut',
-        data:{labels,datasets:[{data,backgroundColor:PALETTE_STATUS,borderWidth:2,borderColor:'#fff',hoverOffset:8}]},
-        options:{
-            responsive:true,maintainAspectRatio:false,
-            plugins:{legend:{position:'bottom',labels:{padding:14,font:{size:11}}}}
-        }
-    });
+    window.setTimeout(() => {
+        toast.classList.remove('show');
+    }, duration);
 }
 
-function makeBar(canvasId, labels, datasets, opts={}){
-    destroyChart(canvasId);
-    const ctx=document.getElementById(canvasId).getContext('2d');
-    charts[canvasId]=new Chart(ctx,{
-        type:'bar',
-        data:{labels,datasets},
-        options:{
-            responsive:true,maintainAspectRatio:false,
-            plugins:{legend:{display:datasets.length>1,position:'top',labels:{font:{size:11}}}},
-            scales:{
-                x:{grid:{display:false},ticks:{font:{size:10}}},
-                y:{grid:{color:'#e8edf2'},ticks:{font:{size:10}},beginAtZero:true}
+const FT_COLORS = {
+    blue: '#2563EB',
+    blueSoft: '#3B82F6',
+    blueLight: 'rgba(59, 130, 246, 0.18)',
+    slate: '#0F172A',
+    slateMuted: '#64748B',
+    grid: 'rgba(148, 163, 184, 0.16)',
+    success: '#22C55E',
+    successSoft: 'rgba(34, 197, 94, 0.18)',
+    danger: '#EF4444',
+    dangerSoft: 'rgba(239, 68, 68, 0.16)',
+    warning: '#F59E0B',
+    warningSoft: 'rgba(245, 158, 11, 0.18)',
+    violet: '#8B5CF6',
+    violetSoft: 'rgba(139, 92, 246, 0.18)',
+};
+
+const STATUS_PALETTE = [
+    FT_COLORS.success,
+    FT_COLORS.warning,
+    FT_COLORS.danger,
+    '#94A3B8',
+];
+
+const CATEGORY_PALETTE = [
+    '#2563EB',
+    '#3B82F6',
+    '#60A5FA',
+    '#8B5CF6',
+    '#22C55E',
+    '#F59E0B',
+    '#0EA5E9',
+];
+
+const TYPE_PALETTE = [
+    '#8B5CF6',
+    '#A855F7',
+    '#C084FC',
+    '#3B82F6',
+];
+
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.color = FT_COLORS.slateMuted;
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.legend.labels.pointStyle = 'circle';
+
+function chartGradient(ctx, area, fromColor, toColor) {
+    const gradient = ctx.createLinearGradient(0, area.bottom, 0, area.top);
+    gradient.addColorStop(0, toColor);
+    gradient.addColorStop(1, fromColor);
+    return gradient;
+}
+
+function baseChartOptions() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+            duration: 900,
+            easing: 'easeOutQuart',
+        },
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 18,
+                    font: {
+                        size: 12,
+                        weight: 600,
+                    },
+                },
             },
-            ...opts
-        }
-    });
+            tooltip: {
+                backgroundColor: '#0F172A',
+                titleFont: {
+                    size: 13,
+                    weight: 700,
+                },
+                bodyFont: {
+                    size: 12,
+                    weight: 500,
+                },
+                padding: 12,
+                cornerRadius: 14,
+                displayColors: true,
+            },
+        },
+    };
 }
 
-function makeLine(canvasId, labels, datasets){
+function baseScaleOptions() {
+    return {
+        x: {
+            grid: {
+                display: false,
+            },
+            ticks: {
+                color: FT_COLORS.slateMuted,
+                font: {
+                    size: 11,
+                    weight: 600,
+                },
+            },
+            border: {
+                display: false,
+            },
+        },
+        y: {
+            beginAtZero: true,
+            grid: {
+                color: FT_COLORS.grid,
+                drawBorder: false,
+            },
+            ticks: {
+                color: FT_COLORS.slateMuted,
+                font: {
+                    size: 11,
+                    weight: 600,
+                },
+                padding: 8,
+            },
+            border: {
+                display: false,
+            },
+        },
+    };
+}
+
+function makeDoughnut(canvasId, labels, data) {
     destroyChart(canvasId);
-    const ctx=document.getElementById(canvasId).getContext('2d');
-    charts[canvasId]=new Chart(ctx,{
-        type:'line',
-        data:{labels,datasets},
-        options:{
-            responsive:true,maintainAspectRatio:false,
-            plugins:{legend:{display:false}},
-            scales:{
-                x:{grid:{display:false},ticks:{font:{size:10}}},
-                y:{grid:{color:'#e8edf2'},ticks:{font:{size:10}},beginAtZero:true}
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        return;
+    }
+
+    charts[canvasId] = new Chart(canvas.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                backgroundColor: STATUS_PALETTE,
+                borderWidth: 0,
+                hoverOffset: 10,
+                cutout: '70%',
+                spacing: 3,
+            }],
+        },
+        options: {
+            ...baseChartOptions(),
+        },
+    });
+}
+
+function makeBar(canvasId, labels, datasets, extraOptions = {}) {
+    destroyChart(canvasId);
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        return;
+    }
+
+    charts[canvasId] = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets,
+        },
+        options: {
+            ...baseChartOptions(),
+            scales: baseScaleOptions(),
+            ...extraOptions,
+        },
+    });
+}
+
+function makeLine(canvasId, labels, datasets) {
+    destroyChart(canvasId);
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        return;
+    }
+
+    charts[canvasId] = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets,
+        },
+        options: {
+            ...baseChartOptions(),
+            scales: baseScaleOptions(),
+        },
+    });
+}
+
+function formatCurrency(value) {
+    const number = Number(value || 0);
+    return number.toFixed(2);
+}
+
+function fillKPIs(data) {
+    const totalProducts = data.totalProducts ?? 0;
+    const totalSubs = data.totalSubs ?? 0;
+    const avgPrice = data.avgPrice ?? 0;
+    const totalRevenue = data.totalRevenue ?? 0;
+
+    document.getElementById('lblTotalProducts').textContent = totalProducts;
+    document.getElementById('lblAvgPrice').textContent = formatCurrency(avgPrice);
+    document.getElementById('lblTopCategory').textContent = data.topCategory || '-';
+    document.getElementById('lblTopCategoryCount').textContent = `${data.topCategoryCount ?? 0} produit${(data.topCategoryCount ?? 0) > 1 ? 's' : ''}`;
+    document.getElementById('lblPriceRange').textContent = `${formatCurrency(data.minPrice)} -> ${formatCurrency(data.maxPrice)}`;
+    document.getElementById('lblNewestProduct').textContent = data.newestProduct || '-';
+    document.getElementById('lblNewestDate').textContent = data.newestDate || '-';
+
+    document.getElementById('lblTotalSubs').textContent = totalSubs;
+    document.getElementById('lblActiveSubs').textContent = data.activeSubs ?? 0;
+    document.getElementById('lblSuspendedSubs').textContent = data.suspendedSubs ?? 0;
+    document.getElementById('lblClosedSubs').textContent = data.closedSubs ?? 0;
+    document.getElementById('lblActiveRate').textContent = totalSubs ? `${((data.activeSubs / totalSubs) * 100).toFixed(1)}% du total` : '0.0% du total';
+    document.getElementById('lblSuspendedRate').textContent = totalSubs ? `${((data.suspendedSubs / totalSubs) * 100).toFixed(1)}% du total` : '0.0% du total';
+    document.getElementById('lblClosedRate').textContent = totalSubs ? `${((data.closedSubs / totalSubs) * 100).toFixed(1)}% du total` : '0.0% du total';
+    document.getElementById('lblTotalRevenue').textContent = `${formatCurrency(totalRevenue)} DT`;
+
+    const heroRevenue = document.getElementById('lblTotalRevenueHero');
+    const heroProducts = document.getElementById('lblHeroProducts');
+    const heroSubs = document.getElementById('lblHeroSubs');
+
+    if (heroRevenue) {
+        heroRevenue.textContent = `${formatCurrency(totalRevenue)} DT`;
+    }
+    if (heroProducts) {
+        heroProducts.textContent = totalProducts;
+    }
+    if (heroSubs) {
+        heroSubs.textContent = totalSubs;
+    }
+}
+
+function buildCharts(data) {
+    makeDoughnut(
+        'chartSubsByStatus',
+        ['Actifs', 'Suspendus', 'Fermes', 'Brouillons'],
+        [data.activeSubs || 0, data.suspendedSubs || 0, data.closedSubs || 0, data.draftSubs || 0]
+    );
+
+    const categories = Object.keys(data.productsByCategory || {});
+    makeBar('chartProductsByCategory', categories, [{
+        label: 'Produits',
+        data: categories.map((key) => data.productsByCategory[key]),
+        backgroundColor: CATEGORY_PALETTE.slice(0, Math.max(categories.length, 1)),
+        borderRadius: 12,
+        borderSkipped: false,
+        maxBarThickness: 54,
+    }]);
+
+    const types = Object.keys(data.subsByType || {});
+    makeBar('chartSubsByType', types, [{
+        label: 'Abonnements',
+        data: types.map((key) => data.subsByType[key]),
+        backgroundColor: TYPE_PALETTE.slice(0, Math.max(types.length, 1)),
+        borderRadius: 12,
+        borderSkipped: false,
+        maxBarThickness: 54,
+    }]);
+
+    const months = Object.keys(data.subsOverTime || {});
+    makeLine('chartSubsOverTime', months, [{
+        label: 'Abonnements',
+        data: months.map((key) => data.subsOverTime[key]),
+        borderColor: FT_COLORS.blue,
+        backgroundColor(context) {
+            const chart = context.chart;
+            const { ctx, chartArea } = chart;
+            if (!chartArea) {
+                return FT_COLORS.blueLight;
             }
-        }
+
+            return chartGradient(ctx, chartArea, 'rgba(59, 130, 246, 0.28)', 'rgba(59, 130, 246, 0.02)');
+        },
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointBorderColor: FT_COLORS.blue,
+    }]);
+
+    const revenueCategories = Object.keys(data.revenueByCategory || {});
+    makeBar('chartRevenueByCategory', revenueCategories, [
+        {
+            label: 'Revenu estime (DT)',
+            data: revenueCategories.map((key) => data.revenueByCategory[key].revenue),
+            backgroundColor: 'rgba(37, 99, 235, 0.78)',
+            borderRadius: 12,
+            borderSkipped: false,
+            yAxisID: 'y',
+            maxBarThickness: 56,
+        },
+        {
+            label: 'Abonnements actifs',
+            data: revenueCategories.map((key) => data.revenueByCategory[key].subs),
+            backgroundColor: 'rgba(139, 92, 246, 0.6)',
+            borderRadius: 12,
+            borderSkipped: false,
+            yAxisID: 'y1',
+            maxBarThickness: 56,
+        },
+    ], {
+        scales: {
+            ...baseScaleOptions(),
+            y: {
+                ...baseScaleOptions().y,
+                position: 'left',
+                title: {
+                    display: true,
+                    text: 'DT',
+                    color: FT_COLORS.slateMuted,
+                    font: {
+                        size: 11,
+                        weight: 700,
+                    },
+                },
+            },
+            y1: {
+                ...baseScaleOptions().y,
+                position: 'right',
+                grid: {
+                    display: false,
+                },
+                title: {
+                    display: true,
+                    text: 'Abonnements',
+                    color: FT_COLORS.slateMuted,
+                    font: {
+                        size: 11,
+                        weight: 700,
+                    },
+                },
+            },
+        },
     });
 }
 
-// ─── Populate KPIs ───
-function fillKPIs(d){
-    document.getElementById('lblTotalProducts').textContent    = d.totalProducts ?? '—';
-    document.getElementById('lblAvgPrice').textContent         = d.avgPrice != null ? d.avgPrice.toFixed(2) : '—';
-    document.getElementById('lblTopCategory').textContent      = d.topCategory ?? '—';
-    document.getElementById('lblTopCategoryCount').textContent = d.topCategoryCount != null ? `${d.topCategoryCount} produits` : '—';
-    document.getElementById('lblPriceRange').textContent       = d.minPrice != null ? `${d.minPrice} → ${d.maxPrice}` : '—';
-    document.getElementById('lblNewestProduct').textContent    = d.newestProduct ?? '—';
-    document.getElementById('lblNewestDate').textContent       = d.newestDate ?? '—';
+async function loadDashboard() {
+    const button = document.getElementById('btnRefresh');
 
-    const tot = d.totalSubs || 0;
-    document.getElementById('lblTotalSubs').textContent     = tot;
-    document.getElementById('lblActiveSubs').textContent    = d.activeSubs ?? '—';
-    document.getElementById('lblSuspendedSubs').textContent = d.suspendedSubs ?? '—';
-    document.getElementById('lblClosedSubs').textContent    = d.closedSubs ?? '—';
-    document.getElementById('lblActiveRate').textContent    = tot ? `${((d.activeSubs/tot)*100).toFixed(1)}% du total` : '—';
-    document.getElementById('lblSuspendedRate').textContent = tot ? `${((d.suspendedSubs/tot)*100).toFixed(1)}% du total` : '—';
-    document.getElementById('lblClosedRate').textContent    = tot ? `${((d.closedSubs/tot)*100).toFixed(1)}% du total` : '—';
-    document.getElementById('lblTotalRevenue').textContent  = d.totalRevenue != null ? `${d.totalRevenue.toFixed(2)} DT` : '—';
-}
-
-// ─── Build Charts ───
-function buildCharts(d){
-    // Pie: by status
-    makePie('chartSubsByStatus',
-        ['Actifs','Suspendus','Fermés','Brouillons'],
-        [d.activeSubs||0, d.suspendedSubs||0, d.closedSubs||0, d.draftSubs||0]
-    );
-
-    // Bar: products by category
-    const cats = Object.keys(d.productsByCategory || {});
-    makeBar('chartProductsByCategory', cats,
-        [{label:'Produits', data:cats.map(k=>d.productsByCategory[k]),
-            backgroundColor:PALETTE_CAT.slice(0,cats.length), borderRadius:6, borderSkipped:false}]
-    );
-
-    // Bar: subs by type
-    const types = Object.keys(d.subsByType || {});
-    makeBar('chartSubsByType', types,
-        [{label:'Abonnements', data:types.map(k=>d.subsByType[k]),
-            backgroundColor:PALETTE_TYPE.slice(0,types.length), borderRadius:6, borderSkipped:false}]
-    );
-
-    // Line: subs over time
-    const months = Object.keys(d.subsOverTime || {});
-    makeLine('chartSubsOverTime', months,
-        [{label:'Abonnements', data:months.map(k=>d.subsOverTime[k]),
-            borderColor:'#1a73e8', backgroundColor:'rgba(26,115,232,0.08)',
-            fill:true, tension:.4, pointRadius:4, pointBackgroundColor:'#1a73e8'}]
-    );
-
-    // Joint bar: revenue by category
-    const rcats = Object.keys(d.revenueByCategory || {});
-    makeBar('chartRevenueByCategory', rcats,[
-        {label:'Revenu Estimé (DT)', data:rcats.map(k=>d.revenueByCategory[k].revenue),
-            backgroundColor:'rgba(26,115,232,0.75)', borderRadius:6, borderSkipped:false, yAxisID:'y'},
-        {label:'Abonnements Actifs', data:rcats.map(k=>d.revenueByCategory[k].subs),
-            backgroundColor:'rgba(217,119,6,0.65)', borderRadius:6, borderSkipped:false, yAxisID:'y1'},
-    ],{
-        scales:{
-            x:{grid:{display:false},ticks:{font:{size:10}}},
-            y:{grid:{color:'#e8edf2'},ticks:{font:{size:10}},beginAtZero:true,position:'left',title:{display:true,text:'DT',font:{size:10}}},
-            y1:{grid:{display:false},ticks:{font:{size:10}},beginAtZero:true,position:'right',title:{display:true,text:'Abonnements',font:{size:10}}}
-        }
-    });
-}
-
-// ─── Main load ───
-async function loadDashboard(){
-    const btn = document.getElementById('btnRefresh');
-    btn.disabled = true;
-    btn.textContent = '⟳  Chargement…';
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="bi bi-arrow-repeat"></i> Chargement...';
+    }
 
     try {
-        const res = await fetch('/admin/dashboard/data');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const d = await res.json();
-        fillKPIs(d);
-        buildCharts(d);
+        const response = await fetch('/admin/dashboard/data');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        fillKPIs(data);
+        buildCharts(data);
+
         const now = new Date().toLocaleString('fr-FR');
-        document.getElementById('lblLastRefresh').textContent = `Dernière actualisation : ${now}`;
-        showToast('✅ Données actualisées');
-    } catch(e) {
-        console.error(e);
-        showToast('❌ Erreur lors du chargement', 4000);
+        const refreshLabel = document.getElementById('lblLastRefresh');
+        if (refreshLabel) {
+            refreshLabel.textContent = `Derniere actualisation : ${now}`;
+        }
+
+        showToast('Dashboard actualise avec succes');
+    } catch (error) {
+        console.error(error);
+        showToast('Erreur lors du chargement des donnees', 4200);
     } finally {
-        btn.disabled = false;
-        btn.textContent = '⟳  Actualiser';
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = '<i class="bi bi-arrow-repeat"></i> Actualiser';
+        }
     }
 }
 
-async function sendEmailReport(){
-    showToast('📧 Envoi du rapport PDF en cours…', 2000);
+async function sendEmailReport() {
+    showToast('Envoi du rapport en cours...', 1800);
+
     try {
-        const res = await fetch('/admin/dashboard/send-report', {method:'POST'});
-        const d = await res.json();
-        showToast(d.success ? '✅ Rapport envoyé par email' : '❌ Erreur lors de l\'envoi', 4000);
-    } catch(e) {
-        showToast('❌ Impossible d\'envoyer le rapport', 4000);
+        const response = await fetch('/admin/dashboard/send-report', {
+            method: 'POST',
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            showToast('Rapport envoye par email');
+            return;
+        }
+
+        showToast('Erreur lors de l envoi du rapport', 4200);
+    } catch (error) {
+        console.error(error);
+        showToast('Impossible d envoyer le rapport', 4200);
     }
 }
 
-// ─── Init ───
 loadDashboard();

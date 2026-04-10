@@ -3,6 +3,7 @@
 namespace App\Controller\Admin;
 
 use App\Entity\User\User;
+use App\Exception\UserDeletionException;
 use App\Form\Admin\AdminCreateClientFormType;
 use App\Form\Admin\AdminUserEditFormType;
 use App\Repository\KycRepository;
@@ -12,6 +13,7 @@ use App\Service\KycService;
 use App\Service\NotificationService;
 use App\Service\QrCodeService;
 use App\Service\UserService;
+use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -183,8 +185,13 @@ class UserController extends AbstractController
         }
 
         $name = $user->getFullName();
-        $this->userService->deleteUser($user);
-        $this->addFlash('success', "L'utilisateur « {$name} » a été supprimé définitivement.");
+
+        try {
+            $this->userService->deleteUser($user);
+            $this->addFlash('success', "L'utilisateur « {$name} » a été supprimé définitivement.");
+        } catch (UserDeletionException $e) {
+            $this->addFlash('warning', $e->getMessage());
+        }
 
         return $this->redirectToRoute('admin_user_list');
     }
@@ -497,3 +504,4 @@ class UserController extends AbstractController
         ];
     }
 }
+

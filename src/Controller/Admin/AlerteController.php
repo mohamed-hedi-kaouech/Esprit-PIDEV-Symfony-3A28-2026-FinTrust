@@ -23,6 +23,7 @@ class AlerteController extends AbstractController
             ->createQueryBuilder('a')
             ->leftJoin('a.categorie', 'c')
             ->addSelect('c')
+            ->addOrderBy('a.read', 'ASC')
             ->orderBy('a.createdAt', 'DESC')
             ->getQuery()
             ->getResult();

@@ -1,156 +1,244 @@
 {% extends 'admin/back.html.twig' %}
-{% block title %}List Produit{% endblock %}
 
-{% block admin_content %}
+{% block title %}Catalogue produits{% endblock %}
 
+{% block stylesheets %}
+  {{ parent() }}
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Fraunces:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ asset('css/Product/StyleProduct.css') }}">
-
   <style>
-    /* stagger */
     {% for i in 1..50 %}
     .pl-card:nth-child({{ i }}) { animation-delay: {{ (i - 1) * 0.04 }}s; }
     {% endfor %}
   </style>
+{% endblock %}
+
+{% block admin_content %}
+  {% set searchTerm = app.request.query.get('search') %}
+  {% set filterCat = app.request.query.get('category') %}
+  {% set sortValue = app.request.query.get('sort') %}
+  {% set categories = [] %}
+
+  {% for product in products %}
+    {% if product.category not in categories %}
+      {% set categories = categories|merge([product.category]) %}
+    {% endif %}
+  {% endfor %}
 
   <div class="pl-page">
+    <div class="pl-bg-glow pl-bg-glow--one"></div>
+    <div class="pl-bg-glow pl-bg-glow--two"></div>
 
-    {# ── Header ── #}
-    <div class="pl-header">
-      <h1 class="pl-title">Nos Produits</h1>
+    <section class="pl-hero">
+      <div class="pl-hero__content">
+        <span class="pl-hero__eyebrow">
+          <span class="pl-hero__eyebrow-icon"><i class="bi bi-stars"></i></span>
+          Catalogue premium
+        </span>
+        <h1 class="pl-title">Nos Produits</h1>
+        <p class="pl-subtitle">
+          Pilotez votre catalogue bancaire avec une interface plus elegante, plus lisible et plus dynamique.
+          Recherchez rapidement, filtrez par categorie et accedez a vos actions d'administration en un coup d'oeil.
+        </p>
 
-      <div class="pl-count">{{ products|length }} produit{{ products|length != 1 ? 's' : '' }}</div>
-      <a  href="{{ path('CreateProduct') }}" class="pl-buy-btn">&#43; Nouveau Produit</a>
-    </div>
+        <div class="pl-hero-metrics">
+          <div class="pl-hero-metric">
+            <span class="pl-hero-metric__label">Produits visibles</span>
+            <span class="pl-hero-metric__value">{{ products|length }}</span>
+          </div>
+          <div class="pl-hero-metric">
+            <span class="pl-hero-metric__label">Categories</span>
+            <span class="pl-hero-metric__value">{{ categories|length }}</span>
+          </div>
+          <div class="pl-hero-metric">
+            <span class="pl-hero-metric__label">Recherche active</span>
+            <span class="pl-hero-metric__value">{{ searchTerm ? 'Oui' : 'Non' }}</span>
+          </div>
+        </div>
+      </div>
 
-    {# ── Controls ── #}
-    <form method="GET" action="{{ path('product_list') }}">
-      <div class="pl-controls">
+      <div class="pl-hero__side">
+        <div class="pl-count">{{ products|length }} produit{{ products|length != 1 ? 's' : '' }}</div>
+        <div class="pl-hero-note">
+          <span class="pl-hero-note__title">Action rapide</span>
+          <p>Ajoutez un nouveau produit, mettez a jour les offres existantes et gardez une presentation bancaire haut de gamme.</p>
+        </div>
+        <a href="{{ path('CreateProduct') }}" class="pl-buy-btn">
+          <i class="bi bi-plus-lg"></i>
+          Nouveau produit
+        </a>
+      </div>
+    </section>
 
-        <div class="pl-search-wrap">
-          <input
-                  class="pl-input"
-                  type="text"
-                  name="search"
-                  placeholder="🔍 Rechercher un produit..."
-                  value="{{ app.request.query.get('search') }}"
-          />
-          <button type="submit" class="pl-btn pl-btn-primary">Rechercher</button>
-          <a href="{{ path('product_list') }}" class="pl-btn pl-btn-ghost">✕</a>
+    <form method="GET" action="{{ path('product_list') }}" class="pl-filter-card">
+      <div class="pl-filter-card__grid">
+        <div class="pl-search-field">
+          <label class="pl-filter-label" for="product-search">Recherche</label>
+          <div class="pl-search-field__control">
+            <span class="pl-search-field__icon"><i class="bi bi-search"></i></span>
+            <input
+              id="product-search"
+              class="pl-input"
+              type="text"
+              name="search"
+              placeholder="Rechercher un produit, une categorie ou une description..."
+              value="{{ searchTerm }}"
+            />
+          </div>
         </div>
 
-        <div class="pl-divider"></div>
+        <div>
+          <label class="pl-filter-label" for="product-category">Categorie</label>
+          <div class="pl-select-wrap">
+            <select id="product-category" name="category" class="pl-select">
+              <option value="">Toutes</option>
+              {% for cat in categories|sort %}
+                <option value="{{ cat }}" {% if filterCat == cat %}selected{% endif %}>
+                  {{ cat|replace({'_': ' '})|title }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
 
-        <span class="pl-filter-label">Catégorie</span>
-        <select name="category" class="pl-select" onchange="this.form.submit()">
-          <option value="">Toutes</option>
-          {% set categories = [] %}
-          {% for product in products %}
-            {% if product.category not in categories %}
-              {% set categories = categories|merge([product.category]) %}
-            {% endif %}
-          {% endfor %}
-          {% for cat in categories|sort %}
-            <option value="{{ cat }}" {% if app.request.query.get('category') == cat %}selected{% endif %}>
-              {{ cat|replace({'_': ' '})|title }}
-            </option>
-          {% endfor %}
-        </select>
+        <div>
+          <label class="pl-filter-label" for="product-sort">Trier</label>
+          <div class="pl-select-wrap">
+            <select id="product-sort" name="sort" class="pl-select">
+              <option value="">Par defaut</option>
+              <option value="price_asc" {% if sortValue == 'price_asc' %}selected{% endif %}>Prix croissant</option>
+              <option value="price_desc" {% if sortValue == 'price_desc' %}selected{% endif %}>Prix decroissant</option>
+              <option value="date_desc" {% if sortValue == 'date_desc' %}selected{% endif %}>Plus recent</option>
+              <option value="date_asc" {% if sortValue == 'date_asc' %}selected{% endif %}>Plus ancien</option>
+            </select>
+          </div>
+        </div>
 
-        <span class="pl-filter-label">Trier</span>
-        <select name="sort" class="pl-select" onchange="this.form.submit()">
-          <option value="">Par défaut</option>
-          <option value="price_asc"  {% if app.request.query.get('sort') == 'price_asc'  %}selected{% endif %}>Prix ↑</option>
-          <option value="price_desc" {% if app.request.query.get('sort') == 'price_desc' %}selected{% endif %}>Prix ↓</option>
-          <option value="date_desc"  {% if app.request.query.get('sort') == 'date_desc'  %}selected{% endif %}>Plus récent</option>
-          <option value="date_asc"   {% if app.request.query.get('sort') == 'date_asc'   %}selected{% endif %}>Plus ancien</option>
-        </select>
-
+        <div class="pl-filter-actions">
+          <button type="submit" class="pl-btn pl-btn-primary">
+            <i class="bi bi-funnel-fill"></i>
+            Rechercher
+          </button>
+          <a href="{{ path('product_list') }}" class="pl-btn pl-btn-ghost">
+            <i class="bi bi-x-lg"></i>
+            Reset
+          </a>
+        </div>
       </div>
+
+      {% if searchTerm or filterCat %}
+        <div class="pl-active-bar">
+          <span class="pl-active-bar__title">Filtres actifs</span>
+          <div class="pl-active-chips">
+            {% if searchTerm %}
+              <span class="pl-active-chip"><i class="bi bi-search me-2"></i>{{ searchTerm }}</span>
+            {% endif %}
+            {% if filterCat %}
+              <span class="pl-active-chip"><i class="bi bi-tag me-2"></i>{{ filterCat|replace({'_': ' '})|title }}</span>
+            {% endif %}
+            {% if sortValue %}
+              <span class="pl-active-chip"><i class="bi bi-arrow-down-up me-2"></i>{{ sortValue|replace({'_': ' '})|title }}</span>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
     </form>
 
-    {# ── Active filter indicator ── #}
-    {% set searchTerm = app.request.query.get('search') %}
-    {% set filterCat  = app.request.query.get('category') %}
-    {% if searchTerm or filterCat %}
-      <div class="pl-active-bar">
-        🔎 Résultats filtrés
-        {% if searchTerm %} — recherche : <strong>"{{ searchTerm }}"</strong>{% endif %}
-        {% if filterCat  %} — catégorie : <strong>{{ filterCat|replace({'_': ' '})|title }}</strong>{% endif %}
+    <div class="pl-results-bar">
+      <div class="pl-results-bar__left">
+        <span class="pl-results-bar__count">{{ products|length }}</span>
+        <span class="pl-results-bar__label">resultat{{ products|length > 1 ? 's' : '' }} disponibles</span>
       </div>
-    {% endif %}
+      <span class="pl-results-pill">
+        <i class="bi bi-lightning-charge-fill me-2"></i>
+        Gestion produits FinTrust
+      </span>
+    </div>
 
-    {# ── Card Grid ── #}
-    {% set strips = ['strip-blue','strip-green','strip-amber','strip-purple','strip-coral'] %}
-    {% set icons  = ['icon-blue','icon-green','icon-amber','icon-purple','icon-coral'] %}
-    {% set badges = ['badge-blue','badge-green','badge-amber','badge-purple','badge-coral'] %}
+    {% set tones = ['tone-blue', 'tone-green', 'tone-amber', 'tone-purple', 'tone-coral'] %}
 
     <div class="pl-grid">
-
       {% if products is empty %}
         <div class="pl-empty">
-          <div class="pl-empty-icon">📭</div>
-          <div class="pl-empty-text">Aucun produit trouvé.</div>
+          <div class="pl-empty__icon"><i class="bi bi-inbox-fill"></i></div>
+          <h2 class="pl-empty__title">Aucun produit trouve</h2>
+          <p class="pl-empty__text">
+            Ajustez vos filtres ou creez une nouvelle offre pour enrichir le catalogue avec une presentation claire et professionnelle.
+          </p>
+          <a href="{{ path('CreateProduct') }}" class="pl-buy-btn">
+            <i class="bi bi-plus-lg"></i>
+            Ajouter un produit
+          </a>
         </div>
       {% else %}
         {% for product in products %}
-          {% set idx = loop.index0 % 5 %}
+          {% set tone = tones[loop.index0 % tones|length] %}
 
-          {# Hidden buy form #}
-          <form
-                  id="buy-form-{{ product.productId }}"
-                  method="POST"
-                  action="{{ path('Client_product_Buy') }}"
-                  style="display:none"
-          >
-            <input type="hidden" name="Productid" value="{{ product.productId }}">
-            <input type="hidden" name="type" id="buy-type-{{ product.productId }}">
-            <input type="hidden" name="_token" value="{{ csrf_token('BuyProduct_') }}">
-          </form>
-
-          <div class="pl-card">
-            <div class="pl-card-top {{ strips[idx] }}"></div>
-
-            <div class="pl-card-body">
-              <div class="pl-card-icon-row">
-                <div class="pl-card-icon {{ icons[idx] }}">
-                  {{ product.category|slice(0,2)|upper }}
+          <article class="pl-card {{ tone }}">
+            <div class="pl-card__cover">
+              <div class="pl-card__meta">
+                <div class="pl-card__icon">
+                  {{ product.category|slice(0, 2)|upper }}
                 </div>
-                <div style="text-align:right">
-                <span class="pl-card-badge {{ badges[idx] }}">
-                  {{ product.category|replace({'_': ' '})|title }}
-                </span>
-                  <div class="pl-card-date">{{ product.createdAt|date('d/m/Y') }}</div>
+                <div class="pl-card__meta-right">
+                  <span class="pl-card__badge">{{ product.category|replace({'_': ' '})|title }}</span>
+                  <span class="pl-card__date">{{ product.createdAt|date('d/m/Y') }}</span>
                 </div>
               </div>
+              <div class="pl-card__cover-gloss"></div>
+            </div>
 
-              <p class="pl-card-desc" title="{{ product.description }}">
+            <div class="pl-card__body">
+              <h3 class="pl-card__title">{{ product.description|length > 30 ? product.description|slice(0, 30) ~ '...' : product.description }}</h3>
+              <p class="pl-card__description" title="{{ product.description }}">
                 {{ product.description }}
               </p>
-            </div>
 
-            <div class="pl-card-footer">
-              <div class="pl-card-price">
-                {{ product.price|number_format(2, ',', ' ') }}<span>DT</span>
+              <div class="pl-card__highlights">
+                <span class="pl-card__highlight">
+                  <i class="bi bi-tag-fill"></i>
+                  {{ product.category|replace({'_': ' '})|title }}
+                </span>
+                <span class="pl-card__highlight">
+                  <i class="bi bi-calendar-event"></i>
+                  {{ product.createdAt|date('d/m/Y') }}
+                </span>
               </div>
-              <a class="pl-buy-btn" href="{{ path('EditProduct', {id: product.productId}) }}" >Edit</a><br>
-              <form method="post" action="{{ path('product_delete', {id: product.productId}) }}" class="delete-form">
-                <button class="pl-buy-btn" type="button">
-                  Delete
-                </button>
-              </form>
             </div>
-          </div>
 
+            <div class="pl-card__footer">
+              <div class="pl-card__price-block">
+                <span class="pl-card__price-label">Tarif</span>
+                <div class="pl-card__price">
+                  {{ product.price|number_format(2, ',', ' ') }}<span class="pl-card__currency">DT</span>
+                </div>
+              </div>
+
+              <div class="d-flex flex-column gap-2">
+                <a class="pl-buy-btn" href="{{ path('EditProduct', {id: product.productId}) }}">
+                  <i class="bi bi-pencil-square"></i>
+                  Modifier
+                </a>
+                <form method="post" action="{{ path('product_delete', {id: product.productId}) }}" class="delete-form">
+                  <button class="pl-btn pl-btn-ghost" type="button">
+                    <i class="bi bi-trash3"></i>
+                    Supprimer
+                  </button>
+                </form>
+              </div>
+            </div>
+          </article>
         {% endfor %}
       {% endif %}
-
     </div>
   </div>
+{% endblock %}
 
-  {# ── Consume flashes ── #}
+{% block javascripts %}
+  {{ parent() }}
+
   {% set flashSuccesses = app.flashes('success') %}
-  {% set flashErrors    = app.flashes('error') %}
+  {% set flashErrors = app.flashes('error') %}
 
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="{{ asset('js/Product/ScriptProduct.js') }}" defer></script>
@@ -164,9 +252,9 @@
         showConfirmButton: false,
         timer: 2500,
         timerProgressBar: true,
-        background: '#151820',
-        color: '#f0f2f8',
-        iconColor: '#22c97a'
+        background: '#ffffff',
+        color: '#0f172a',
+        iconColor: '#22c55e'
       });
     });
     {% endif %}
@@ -177,40 +265,11 @@
         icon: 'error',
         title: '{{ flashErrors|first|e('js') }}',
         showConfirmButton: true,
-        background: '#151820',
-        color: '#f0f2f8'
+        background: '#ffffff',
+        color: '#0f172a',
+        confirmButtonColor: '#2563eb'
       });
     });
     {% endif %}
-
-    function selectType(productId) {
-      Swal.fire({
-        title: "Type d'abonnement",
-        text: "Choisissez le type d'abonnement pour ce produit :",
-        input: 'select',
-        inputOptions: {
-          'MONTHLY':     'Mensuel',
-          'ANNUALLY':    'Annuel',
-          'TRANSACTION': 'Par transaction',
-          'ONE_TIME':    'Paiement unique'
-        },
-        inputPlaceholder: 'Sélectionner un type',
-        showCancelButton: true,
-        confirmButtonText: 'Confirmer',
-        cancelButtonText: 'Annuler',
-        background: '#151820',
-        color: '#f0f2f8',
-        confirmButtonColor: '#3d7fff',
-        inputValidator: (value) => {
-          if (!value) return 'Veuillez sélectionner un type.';
-        }
-      }).then((result) => {
-        if (result.isConfirmed) {
-          document.getElementById('buy-type-' + productId).value = result.value;
-          document.getElementById('buy-form-' + productId).submit();
-        }
-      });
-    }
   </script>
-
 {% endblock %}

@@ -3820,3 +3820,59 @@ body.ft-admin-body {
 .stats-card:nth-child(2) .stats-number {
   color: #059669;
 }
+
+.ft-badge-info,
+.ft-badge-success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: .45rem .78rem;
+  border-radius: 999px;
+  font-size: .8rem;
+  font-weight: 800;
+}
+
+.ft-badge-info {
+  color: #1d4ed8;
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+}
+
+.ft-badge-success {
+  color: #047857;
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+}
+
+.ft-alert-row-unread {
+  background: linear-gradient(180deg, rgba(239,246,255,.78), rgba(255,255,255,.98));
+}
+
+.ft-alert-row-read {
+  opacity: .92;
+}
+
+.ft-alert-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+}
+
+.ft-alert-action-btn,
+.ft-alert-delete-btn {
+  min-height: 42px;
+  border-radius: 14px;
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+.ft-alert-delete-btn {
+  border: 1px solid rgba(248,113,113,.4);
+  background: linear-gradient(135deg, #fff1f2, #ffe4e6);
+  color: #be123c;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.ft-alert-delete-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(244,63,94,.55);
+  box-shadow: 0 12px 22px rgba(244,63,94,.14);
+}

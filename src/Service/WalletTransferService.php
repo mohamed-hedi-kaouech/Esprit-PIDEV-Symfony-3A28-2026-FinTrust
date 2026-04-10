@@ -134,17 +134,6 @@ class WalletTransferService
                 );
             }
 
-            $this->walletTransferMailer->sendTransferEmails(
-                transferId: $transactionId,
-                senderUser: $user,
-                senderWallet: $sourceWallet,
-                recipientUser: $destinationUser,
-                recipientWallet: $destinationWallet,
-                amount: $amount,
-                transferredAt: $createdAt,
-                label: $label !== '' ? $label : null,
-            );
-
             $transfer = [
                 'id' => $transactionId,
                 'reference' => $reference,

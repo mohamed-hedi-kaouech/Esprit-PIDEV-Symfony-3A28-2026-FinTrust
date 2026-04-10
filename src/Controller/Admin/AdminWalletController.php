@@ -349,12 +349,31 @@ class AdminWalletController extends AbstractController
             return $this->redirectToRoute('admin_wallet_index');
         }
 
+        $walletId = $wallet->getIdWallet();
+        $userId = $wallet->getIdUser();
+
+        $this->entityManager->getRepository(Transaction::class)
+            ->createQueryBuilder('t')
+            ->delete()
+            ->andWhere('t.idWallet = :walletId')
+            ->setParameter('walletId', $walletId)
+            ->getQuery()
+            ->execute();
+
+        $this->entityManager->getRepository(Cheque::class)
+            ->createQueryBuilder('c')
+            ->delete()
+            ->andWhere('c.idWallet = :walletId')
+            ->setParameter('walletId', $walletId)
+            ->getQuery()
+            ->execute();
+
         $this->entityManager->remove($wallet);
         $this->entityManager->flush();
 
         $this->walletAuditService->log('wallet.deleted', [
-            'wallet_id' => $wallet->getIdWallet(),
-            'user_id' => $wallet->getIdUser(),
+            'wallet_id' => $walletId,
+            'user_id' => $userId,
         ]);
 
         $this->addFlash('success', 'Le wallet a ete supprime avec succes.');

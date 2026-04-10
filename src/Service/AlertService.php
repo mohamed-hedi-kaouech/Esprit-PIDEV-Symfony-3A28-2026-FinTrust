@@ -14,6 +14,6 @@ class AlertService
     public function getActiveAlertsCount(): int
     {
         return $this->entityManager->getRepository(Alerte::class)
-            ->count(['active' => true]);
+            ->count(['active' => true, 'read' => false]);
     }
 }

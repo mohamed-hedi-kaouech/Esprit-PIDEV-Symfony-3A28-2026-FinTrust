@@ -3,10 +3,16 @@
 namespace App\Controller\Front;
 
 use App\Entity\User\Client\Kyc;
+use App\Entity\Categorie\Alerte;
+use App\Repository\CategorieRepository;
+use App\Repository\ItemRepository;
 use App\Entity\User\User;
 use App\Form\Front\KycFormType;
 use App\Form\Front\ProfileFormType;
+use App\Entity\Publication\Publication;
+use App\Form\Front\PublicationCommentType;
 use App\Repository\KycRepository;
+use App\Repository\PublicationRepository;
 use App\Security\KycAccessChecker;
 use App\Security\RiskAccessChecker;
 use App\Service\BehavioralProfileService;
@@ -16,6 +22,7 @@ use App\Service\NotificationService;
 use App\Service\QrCodeService;
 use App\Service\UserService;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -66,6 +73,10 @@ class ClientController extends AbstractController
         private readonly RiskAccessChecker $riskAccessChecker,
         private readonly ValidatorInterface $validator,
         private readonly BehavioralProfileService $behavioralProfileService,
+        private readonly PublicationRepository $publicationRepository,
+        private readonly CategorieRepository $categorieRepository,
+        private readonly ItemRepository $itemRepository,
+        private readonly EntityManagerInterface $em,
     ) {}
 
     #[Route('/tableau-de-bord', name: 'dashboard')]
@@ -269,7 +280,7 @@ class ClientController extends AbstractController
     }
 
     #[Route('/module/{slug}', name: 'module', methods: ['GET'])]
-    public function module(string $slug): Response
+    public function module(string $slug, Request $request): Response
     {
         /** @var User $user */
         $user = $this->getUser();
@@ -295,9 +306,207 @@ class ClientController extends AbstractController
             return $this->redirectToRoute('front_wallet_dashboard');
         }
 
+        if ($slug === 'publications') {
+            $search = trim((string) $request->query->get('keyword', ''));
+            $category = trim((string) $request->query->get('category', '')) ?: null;
+            $sort = (string) $request->query->get('sort', 'recentes');
+
+            $publications = $this->publicationRepository->findPublishedWithStats(
+                $category,
+                $search,
+                $sort,
+            );
+
+            $categories = $this->publicationRepository->getDistinctCategories();
+
+            return $this->render('front/client/publications.html.twig', [
+                'module' => self::FRONT_MODULES[$slug],
+                'publications' => $publications,
+                'categories' => $categories,
+                'searchTerm' => $search,
+                'selectedCategory' => $category,
+                'sortBy' => $sort,
+            ]);
+        }
+
+        if ($slug === 'budget') {
+            $categories = $this->categorieRepository->findBy([], ['nomCategorie' => 'ASC']);
+            $budgetStats = [];
+            $totalBudget = 0.0;
+            $totalSpent = 0.0;
+            $activeAlerts = 0;
+            $totalItems = 0;
+
+            $weeklyLabels = [
+                1 => 'Lun',
+                2 => 'Mar',
+                3 => 'Mer',
+                4 => 'Jeu',
+                5 => 'Ven',
+                6 => 'Sam',
+                7 => 'Dim',
+            ];
+            $weeklyActivity = array_fill_keys(array_values($weeklyLabels), 0);
+
+            foreach ($categories as $categorie) {
+                $spent = $this->itemRepository->getTotalMontantByCategorie($categorie->getIdCategorie());
+                $itemCount = $categorie->getItems()->count();
+                $alerts = array_values(array_filter(
+                    $categorie->getAlertes()->toArray(),
+                    static fn (Alerte $alerte): bool => (bool) $alerte->getActive()
+                ));
+
+                foreach ($alerts as $alerte) {
+                    $dayIndex = (int) $alerte->getCreatedAt()->format('N');
+                    if (isset($weeklyLabels[$dayIndex])) {
+                        $weeklyActivity[$weeklyLabels[$dayIndex]]++;
+                    }
+                }
+
+                $budget = $categorie->getBudgetPrevu();
+                $usage = $budget > 0 ? ($spent / $budget) * 100 : 0;
+                $remaining = $budget - $spent;
+                $alertCount = count($alerts);
+
+                if ($usage >= 100 || $alertCount > 0) {
+                    $status = 'danger';
+                    $statusLabel = 'Depassement';
+                } elseif ($usage >= 80) {
+                    $status = 'warning';
+                    $statusLabel = 'Alerte proche';
+                } else {
+                    $status = 'ok';
+                    $statusLabel = 'Sous controle';
+                }
+
+                $budgetStats[] = [
+                    'categorie' => $categorie,
+                    'spent' => $spent,
+                    'budget' => $budget,
+                    'usage' => $usage,
+                    'remaining' => $remaining,
+                    'itemCount' => $itemCount,
+                    'alertCount' => $alertCount,
+                    'status' => $status,
+                    'statusLabel' => $statusLabel,
+                ];
+
+                $totalBudget += $budget;
+                $totalSpent += $spent;
+                $activeAlerts += $alertCount;
+                $totalItems += $itemCount;
+            }
+
+            usort($budgetStats, static fn (array $left, array $right): int => $right['usage'] <=> $left['usage']);
+
+            $globalUsage = $totalBudget > 0 ? ($totalSpent / $totalBudget) * 100 : 0;
+            $remainingBudget = $totalBudget - $totalSpent;
+            $topCategories = array_slice($budgetStats, 0, 3);
+            $latestAlerts = $this->em->getRepository(Alerte::class)->findBy([], ['createdAt' => 'DESC'], 5);
+
+            $insight = $topCategories !== []
+                ? sprintf(
+                    'La categorie %s concentre actuellement %.1f%% du budget utilise. Gardez un oeil prioritaire sur ce poste.',
+                    $topCategories[0]['categorie']->getNomCategorie(),
+                    $topCategories[0]['usage']
+                )
+                : 'Commencez par definir des categories et des depenses pour activer votre centre de pilotage budgetaire.';
+
+            return $this->render('front/client/budget.html.twig', [
+                'module' => self::FRONT_MODULES[$slug],
+                'budgetStats' => $budgetStats,
+                'topCategories' => $topCategories,
+                'latestAlerts' => $latestAlerts,
+                'weeklyActivity' => $weeklyActivity,
+                'totalBudget' => $totalBudget,
+                'totalSpent' => $totalSpent,
+                'remainingBudget' => $remainingBudget,
+                'globalUsage' => $globalUsage,
+                'activeAlerts' => $activeAlerts,
+                'trackedCategories' => count($categories),
+                'totalItems' => $totalItems,
+                'insight' => $insight,
+            ]);
+        }
+
         return $this->render('front/client/module.html.twig', [
             'module' => self::FRONT_MODULES[$slug],
         ]);
+    }
+
+    #[Route('/publications/{id}', name: 'publications_view', methods: ['GET', 'POST'])]
+    public function viewPublication(Publication $publication, Request $request): Response
+    {
+        $comment = new \App\Entity\User\Feedback();
+        $commentForm = $this->createForm(PublicationCommentType::class, $comment, [
+            'action' => $this->generateUrl('front_publications_view', ['id' => $publication->getId()]),
+        ]);
+        $commentForm->handleRequest($request);
+
+        if ($commentForm->isSubmitted() && $commentForm->isValid()) {
+            $rating = (int) $commentForm->get('rating')->getData();
+            $comment->setPublication($publication)
+                ->setUser($this->getUser())
+                ->setDateFeedback(new \DateTime())
+                ->setTypeReaction('RATING_' . $rating);
+
+            $this->em->persist($comment);
+            $this->em->flush();
+
+            $this->addFlash('success', 'Votre avis a bien été pris en compte.');
+
+            return $this->redirectToRoute('front_publications_view', ['id' => $publication->getId()]);
+        }
+
+        $feedbacks = $publication->getFeedbacks()->toArray();
+        $likes = count(array_filter($feedbacks, static fn($feedback) => $feedback->getTypeReaction() === 'LIKE'));
+        $dislikes = count(array_filter($feedbacks, static fn($feedback) => $feedback->getTypeReaction() === 'DISLIKE'));
+        $ratings = array_map(
+            static fn($feedback) => (int) substr($feedback->getTypeReaction(), 7),
+            array_filter($feedbacks, static fn($feedback) => str_starts_with((string) $feedback->getTypeReaction(), 'RATING_'))
+        );
+        $averageRating = $ratings ? round(array_sum($ratings) / count($ratings), 1) : null;
+        $comments = array_filter($feedbacks, static fn($feedback) => $feedback->getCommentaire() !== null && $feedback->getCommentaire() !== '');
+
+        return $this->render('front/client/publication_detail.html.twig', [
+            'module' => self::FRONT_MODULES['publications'],
+            'publication' => $publication,
+            'commentForm' => $commentForm->createView(),
+            'likes' => $likes,
+            'dislikes' => $dislikes,
+            'averageRating' => $averageRating,
+            'comments' => $comments,
+        ]);
+    }
+
+    #[Route('/publications/{id}/reaction/{reaction}', name: 'publications_react', methods: ['POST'])]
+    public function reactPublication(Publication $publication, string $reaction, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('publication_react_' . $publication->getId(), (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Action invalide.');
+
+            return $this->redirectToRoute('front_publications_view', ['id' => $publication->getId()]);
+        }
+
+        $reaction = strtoupper($reaction);
+        if (!in_array($reaction, ['LIKE', 'DISLIKE'], true)) {
+            $this->addFlash('error', 'Réaction invalide.');
+
+            return $this->redirectToRoute('front_publications_view', ['id' => $publication->getId()]);
+        }
+
+        $feedback = new \App\Entity\User\Feedback();
+        $feedback->setPublication($publication)
+            ->setUser($this->getUser())
+            ->setDateFeedback(new \DateTime())
+            ->setTypeReaction($reaction);
+
+        $this->em->persist($feedback);
+        $this->em->flush();
+
+        $this->addFlash('success', sprintf('Votre %s a bien été enregistré.', strtolower($reaction)));
+
+        return $this->redirectToRoute('front_publications_view', ['id' => $publication->getId()]);
     }
 
     #[Route('/notifications', name: 'notifications')]

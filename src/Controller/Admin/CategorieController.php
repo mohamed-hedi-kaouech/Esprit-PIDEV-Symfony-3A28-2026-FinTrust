@@ -155,7 +155,7 @@ class CategorieController extends AbstractController
         ]);
     }
 
-    #[Route('/delete/{idCategorie}', name: 'delete', methods: ['POST'])]
+    #[Route('/delete/{idCategorie}', name: 'delete', methods: ['GET', 'POST'])]
     public function delete(Request $request, Categorie $categorie): Response
     {
         if ($request->isMethod('POST')) {
